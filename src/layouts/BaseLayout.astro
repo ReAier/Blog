@@ -7,7 +7,7 @@ import CodeEnhancer from '../components/CodeEnhancer.astro';
 interface Props { title?: string; description?: string; image?: string; article?: boolean; }
 const props = Astro.props;
 ---
-<html lang="zh-CN" data-theme="light" data-accent="coral">
+<html lang="zh-CN" data-theme="light" data-accent="rose">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -17,13 +17,13 @@ const props = Astro.props;
       (() => {
         const allowed = new Set(['coral','teal','indigo','amber','rose']);
         const savedTheme = localStorage.getItem('aier-theme') || 'system';
-        const savedAccent = localStorage.getItem('aier-accent') || 'coral';
+        const savedAccent = localStorage.getItem('aier-accent-v2') || 'rose';
         const theme = savedTheme === 'dark' || savedTheme === 'light'
           ? savedTheme
           : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.dataset.theme = theme;
         document.documentElement.dataset.themeChoice = savedTheme;
-        document.documentElement.dataset.accent = allowed.has(savedAccent) ? savedAccent : 'coral';
+        document.documentElement.dataset.accent = allowed.has(savedAccent) ? savedAccent : 'rose';
       })();
     </script>
     <SeoHead {...props} />

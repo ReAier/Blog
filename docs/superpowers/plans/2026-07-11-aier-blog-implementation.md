@@ -13,7 +13,7 @@
 - Site name is `Aier's blogs`; navigation mark is `AIER.`.
 - Site URL is `http://blog.reaier.top` until ICP filing permits HTTPS.
 - Primary language is Simplified Chinese.
-- Accent choices are orange-red, teal, indigo, amber, and rose; orange-red is default.
+- Accent choices are orange-red, teal, indigo, amber, and rose; rose is default.
 - No database, SSR, server-side Node process, comments, analytics, search, login, or registration.
 - Do not modify AstrBot application configuration or proxy behavior.
 - Deployment must keep the previous release available for rollback.

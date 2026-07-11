@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
-  --accent: #f05a3c;
-  --accent-rgb: 240, 90, 60;
+  --accent: #c74776;
+  --accent-rgb: 199, 71, 118;
   --page-background: url('/site-background.webp');
   --backdrop-overlay: linear-gradient(rgba(244, 241, 235, .70), rgba(244, 241, 235, .84));
   --bg: #f4f1eb;
@@ -19,6 +19,7 @@
   --reading: 720px;
 }
 
+:root[data-accent="coral"] { --accent: #f05a3c; --accent-rgb: 240, 90, 60; }
 :root[data-accent="teal"] { --accent: #16a085; --accent-rgb: 22, 160, 133; }
 :root[data-accent="indigo"] { --accent: #4f6bed; --accent-rgb: 79, 107, 237; }
 :root[data-accent="amber"] { --accent: #d89016; --accent-rgb: 216, 144, 22; }

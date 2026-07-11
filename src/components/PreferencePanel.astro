@@ -12,11 +12,11 @@
     </div>
     <span class="preference-label">强调色</span>
     <div class="choice-row" role="group" aria-label="强调色">
-      <button class="accent-choice" type="button" data-accent="coral" aria-label="橙红" aria-pressed="true" style="--swatch:#F05A3C"></button>
+      <button class="accent-choice" type="button" data-accent="coral" aria-label="橙红" aria-pressed="false" style="--swatch:#F05A3C"></button>
       <button class="accent-choice" type="button" data-accent="teal" aria-label="青绿" aria-pressed="false" style="--swatch:#16A085"></button>
       <button class="accent-choice" type="button" data-accent="indigo" aria-label="靛蓝" aria-pressed="false" style="--swatch:#4F6BED"></button>
       <button class="accent-choice" type="button" data-accent="amber" aria-label="琥珀" aria-pressed="false" style="--swatch:#D89016"></button>
-      <button class="accent-choice" type="button" data-accent="rose" aria-label="玫红" aria-pressed="false" style="--swatch:#C74776"></button>
+      <button class="accent-choice" type="button" data-accent="rose" aria-label="玫红" aria-pressed="true" style="--swatch:#C74776"></button>
     </div>
   </div>
 </div>
@@ -28,7 +28,7 @@
   const themeButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-theme-choice]')];
   const accentButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-accent]')];
   const savedTheme = localStorage.getItem('aier-theme') || 'system';
-  const savedAccent = localStorage.getItem('aier-accent') || 'coral';
+  const savedAccent = localStorage.getItem('aier-accent-v2') || 'rose';
 
   const applyTheme = (choice: string) => {
     const resolved = choice === 'dark' || choice === 'light'
@@ -39,7 +39,7 @@
     themeButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === choice)));
   };
   const applyAccent = (accent: string) => {
-    const safeAccent = allowedAccents.has(accent) ? accent : 'coral';
+    const safeAccent = allowedAccents.has(accent) ? accent : 'rose';
     root.dataset.accent = safeAccent;
     accentButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.accent === safeAccent)));
   };
@@ -58,7 +58,7 @@
   }));
   accentButtons.forEach((button) => button.addEventListener('click', () => {
     const accent = button.dataset.accent || 'coral';
-    localStorage.setItem('aier-accent', accent);
+    localStorage.setItem('aier-accent-v2', accent);
     applyAccent(accent);
   }));
   document.addEventListener('click', (event) => {

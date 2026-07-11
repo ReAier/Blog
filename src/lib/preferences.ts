@@ -7,6 +7,7 @@ export const ACCENTS = [
 ] as const;
 
 export type AccentName = (typeof ACCENTS)[number]['name'];
+export const DEFAULT_ACCENT: AccentName = 'rose';
 export type ResolvedTheme = 'light' | 'dark';
 
 export function isAccent(value: unknown): value is AccentName {

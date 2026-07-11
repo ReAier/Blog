@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ACCENTS, isAccent, resolveTheme } from '../src/lib/preferences';
+import { ACCENTS, DEFAULT_ACCENT, isAccent, resolveTheme } from '../src/lib/preferences';
 
 describe('accent preferences', () => {
+  it('uses rose as the default accent', () => {
+    expect(DEFAULT_ACCENT).toBe('rose');
+  });
   it('accepts every configured accent', () => {
     expect(ACCENTS.map((accent) => accent.name)).toEqual(['coral', 'teal', 'indigo', 'amber', 'rose']);
     for (const accent of ACCENTS) expect(isAccent(accent.name)).toBe(true);
