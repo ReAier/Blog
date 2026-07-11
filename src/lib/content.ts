@@ -25,4 +25,3 @@ export function collectTags(posts: readonly TaggedPost[]): Array<{ name: string;
   }
   return [...tags.values()].sort((left, right) => left.name.localeCompare(right.name, 'en'));
 }
-
