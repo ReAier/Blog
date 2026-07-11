@@ -1,0 +1,11 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { collectTags } from '../../lib/content';
+const posts = (await getCollection('blog')).filter((post) => !post.data.draft);
+const tags = collectTags(posts);
+---
+<BaseLayout title="标签" description="按主题浏览 Aier's blogs。">
+  <header class="page-head container"><p class="eyebrow">Topics</p><h1 class="page-title">标签</h1><p class="lead">从主题进入，寻找相关的记录与思考。</p></header>
+  <section class="section container"><ul class="tag-list">{tags.map((tag) => <li><a class="tag" href={`/tags/${encodeURIComponent(tag.name)}/`}>#{tag.name} · {tag.count}</a></li>)}</ul></section>
+</BaseLayout>

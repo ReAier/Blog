@@ -1,0 +1,13 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { sortPostsNewestFirst } from '../lib/content';
+const posts = sortPostsNewestFirst((await getCollection('blog')).filter((post) => !post.data.draft));
+const groups = Map.groupBy(posts, (post) => post.data.publishedAt.getFullYear());
+const years = [...groups.keys()].sort((a, b) => b - a);
+const date = (value: Date) => new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' }).format(value);
+---
+<BaseLayout title="归档" description="Aier's blogs 的文章时间线。">
+  <header class="page-head container"><p class="eyebrow">Timeline</p><h1 class="page-title">归档</h1><p class="lead">沿着时间，重新查看已经写下的内容。</p></header>
+  <section class="section container">{years.map((year) => <section><h2 class="archive-year">{year}</h2><ol class="archive-list">{groups.get(year)?.map((post) => <li class="archive-item"><time datetime={post.data.publishedAt.toISOString()}>{date(post.data.publishedAt)}</time><a href={`/posts/${post.id}/`}>{post.data.title}</a><span>{post.data.tags[0]}</span></li>)}</ol></section>)}</section>
+</BaseLayout>

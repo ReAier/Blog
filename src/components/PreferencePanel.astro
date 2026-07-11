@@ -1,0 +1,74 @@
+---
+---
+<div class="preference-wrap">
+  <button class="icon-button" type="button" data-preference-trigger aria-label="打开外观设置" aria-expanded="false" aria-controls="preference-panel">◐</button>
+  <div id="preference-panel" class="preference-panel glass" data-preference-panel data-open="false" aria-label="外观设置">
+    <h2 class="preference-title">外观设置</h2>
+    <span class="preference-label">主题</span>
+    <div class="choice-row" role="group" aria-label="主题模式">
+      <button class="choice-button" type="button" data-theme-choice="system" aria-pressed="true">跟随系统</button>
+      <button class="choice-button" type="button" data-theme-choice="light" aria-pressed="false">浅色</button>
+      <button class="choice-button" type="button" data-theme-choice="dark" aria-pressed="false">深色</button>
+    </div>
+    <span class="preference-label">强调色</span>
+    <div class="choice-row" role="group" aria-label="强调色">
+      <button class="accent-choice" type="button" data-accent="coral" aria-label="橙红" aria-pressed="true" style="--swatch:#F05A3C"></button>
+      <button class="accent-choice" type="button" data-accent="teal" aria-label="青绿" aria-pressed="false" style="--swatch:#16A085"></button>
+      <button class="accent-choice" type="button" data-accent="indigo" aria-label="靛蓝" aria-pressed="false" style="--swatch:#4F6BED"></button>
+      <button class="accent-choice" type="button" data-accent="amber" aria-label="琥珀" aria-pressed="false" style="--swatch:#D89016"></button>
+      <button class="accent-choice" type="button" data-accent="rose" aria-label="玫红" aria-pressed="false" style="--swatch:#C74776"></button>
+    </div>
+  </div>
+</div>
+<script>
+  const allowedAccents = new Set(['coral', 'teal', 'indigo', 'amber', 'rose']);
+  const root = document.documentElement;
+  const trigger = document.querySelector<HTMLButtonElement>('[data-preference-trigger]');
+  const panel = document.querySelector<HTMLElement>('[data-preference-panel]');
+  const themeButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-theme-choice]')];
+  const accentButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-accent]')];
+  const savedTheme = localStorage.getItem('aier-theme') || 'system';
+  const savedAccent = localStorage.getItem('aier-accent') || 'coral';
+
+  const applyTheme = (choice: string) => {
+    const resolved = choice === 'dark' || choice === 'light'
+      ? choice
+      : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    root.dataset.theme = resolved;
+    root.dataset.themeChoice = choice;
+    themeButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === choice)));
+  };
+  const applyAccent = (accent: string) => {
+    const safeAccent = allowedAccents.has(accent) ? accent : 'coral';
+    root.dataset.accent = safeAccent;
+    accentButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.accent === safeAccent)));
+  };
+
+  applyTheme(savedTheme);
+  applyAccent(savedAccent);
+  trigger?.addEventListener('click', () => {
+    const open = panel?.dataset.open !== 'true';
+    if (panel) panel.dataset.open = String(open);
+    trigger.setAttribute('aria-expanded', String(open));
+  });
+  themeButtons.forEach((button) => button.addEventListener('click', () => {
+    const choice = button.dataset.themeChoice || 'system';
+    localStorage.setItem('aier-theme', choice);
+    applyTheme(choice);
+  }));
+  accentButtons.forEach((button) => button.addEventListener('click', () => {
+    const accent = button.dataset.accent || 'coral';
+    localStorage.setItem('aier-accent', accent);
+    applyAccent(accent);
+  }));
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Node ? event.target : null;
+    if (target && panel?.dataset.open === 'true' && !panel.contains(target) && !trigger?.contains(target)) {
+      panel.dataset.open = 'false';
+      trigger?.setAttribute('aria-expanded', 'false');
+    }
+  });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if ((localStorage.getItem('aier-theme') || 'system') === 'system') applyTheme('system');
+  });
+</script>

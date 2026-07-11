@@ -1,0 +1,16 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { collectTags, sortPostsNewestFirst } from '../../lib/content';
+export async function getStaticPaths() {
+  const posts = (await getCollection('blog')).filter((post) => !post.data.draft);
+  return collectTags(posts).map((tag) => ({ params: { tag: tag.name }, props: { tag: tag.name } }));
+}
+const { tag } = Astro.props;
+const posts = sortPostsNewestFirst((await getCollection('blog')).filter((post) => !post.data.draft && post.data.tags.some((item) => item.toLocaleLowerCase('zh-CN') === tag.toLocaleLowerCase('zh-CN'))));
+---
+<BaseLayout title={`标签：${tag}`} description={`Aier's blogs 中标记为 ${tag} 的文章。`}>
+  <header class="page-head container"><p class="eyebrow">Topic</p><h1 class="page-title">#{tag}</h1><p class="lead">共 {posts.length} 篇文章。</p></header>
+  <section class="section container"><div class="post-grid">{posts.map((post) => <PostCard post={post} />)}</div></section>
+</BaseLayout>

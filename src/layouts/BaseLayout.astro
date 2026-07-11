@@ -1,0 +1,38 @@
+---
+import '../styles/global.css';
+import SeoHead from '../components/SeoHead.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import CodeEnhancer from '../components/CodeEnhancer.astro';
+interface Props { title?: string; description?: string; image?: string; article?: boolean; }
+const props = Astro.props;
+---
+<html lang="zh-CN" data-theme="light" data-accent="coral">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#f4f1eb" />
+    <script is:inline>
+      (() => {
+        const allowed = new Set(['coral','teal','indigo','amber','rose']);
+        const savedTheme = localStorage.getItem('aier-theme') || 'system';
+        const savedAccent = localStorage.getItem('aier-accent') || 'coral';
+        const theme = savedTheme === 'dark' || savedTheme === 'light'
+          ? savedTheme
+          : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.themeChoice = savedTheme;
+        document.documentElement.dataset.accent = allowed.has(savedAccent) ? savedAccent : 'coral';
+      })();
+    </script>
+    <SeoHead {...props} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">跳至正文</a>
+    <SiteHeader />
+    <main id="main-content" class="site-main"><slot /></main>
+    <SiteFooter />
+    <CodeEnhancer />
+  </body>
+</html>

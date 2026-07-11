@@ -1,4 +1,4 @@
-﻿# Aier's blogs Implementation Plan
+# Aier's blogs Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use test-driven development for behavior-bearing TypeScript utilities and execute tasks in order. Steps use checkbox syntax for tracking.
 

@@ -1,0 +1,36 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE } from '../config';
+import { sortPostsNewestFirst } from '../lib/content';
+const posts = sortPostsNewestFirst((await getCollection('blog')).filter((post) => !post.data.draft));
+const featured = posts.filter((post) => post.data.featured).slice(0, 2);
+const latest = posts.slice(0, 4);
+const formatDate = (date: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+---
+<BaseLayout>
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <p class="eyebrow">Personal log / Since 2026</p>
+        <h1 class="display-title">记录思考，<br />持续<em>构建</em>。</h1>
+      </div>
+      <aside class="hero-aside">
+        <span class="hero-index">00 / INTRO</span>
+        <p class="lead">{SITE.tagline}。在清晰与克制之间，保存真实的实践和想法。</p>
+      </aside>
+    </div>
+  </section>
+  {featured.length > 0 && <section class="section">
+    <div class="container">
+      <div class="section-head"><div><p class="eyebrow">Selected notes</p><h2 class="section-title">精选文章</h2></div><a class="text-link" href="/posts/">浏览全部 →</a></div>
+      <div class="post-grid">{featured.map((post) => <article class="post-card"><div class="post-meta"><time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time><span>{post.data.tags[0]}</span></div><h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3><p>{post.data.description}</p></article>)}</div>
+    </div>
+  </section>}
+  <section class="section">
+    <div class="container">
+      <div class="section-head"><div><p class="eyebrow">Latest writing</p><h2 class="section-title">最近更新</h2></div></div>
+      <div class="post-grid">{latest.map((post) => <article class="post-card"><div class="post-meta"><time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time><span>{post.data.tags.join(' · ')}</span></div><h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3><p>{post.data.description}</p></article>)}</div>
+    </div>
+  </section>
+</BaseLayout>

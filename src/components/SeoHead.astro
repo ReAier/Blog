@@ -1,0 +1,20 @@
+---
+import { SITE } from '../config';
+interface Props { title?: string; description?: string; image?: string; article?: boolean; }
+const { title = SITE.title, description = SITE.description, image, article = false } = Astro.props;
+const pageTitle = title === SITE.title ? title : `${title} · ${SITE.title}`;
+const canonical = new URL(Astro.url.pathname, SITE.url);
+const imageUrl = image ? new URL(image, SITE.url) : undefined;
+---
+<title>{pageTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+<meta property="og:type" content={article ? 'article' : 'website'} />
+<meta property="og:title" content={pageTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:locale" content="zh_CN" />
+<meta property="og:site_name" content={SITE.title} />
+{imageUrl && <meta property="og:image" content={imageUrl} />}
+<meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
+<link rel="alternate" type="application/rss+xml" title={SITE.title} href="/rss.xml" />

@@ -1,0 +1,22 @@
+<script>
+  document.querySelectorAll<HTMLElement>('.prose pre').forEach((block) => {
+    if (block.parentElement?.classList.contains('code-frame')) return;
+    const frame = document.createElement('div');
+    frame.className = 'code-frame';
+    block.parentNode?.insertBefore(frame, block);
+    frame.appendChild(block);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'code-copy';
+    button.setAttribute('data-copy-code', '');
+    button.textContent = '复制代码';
+    button.setAttribute('aria-label', '复制代码');
+    button.addEventListener('click', async () => {
+      const code = block.querySelector('code')?.textContent ?? block.textContent ?? '';
+      await navigator.clipboard.writeText(code);
+      button.textContent = '已复制';
+      setTimeout(() => { button.textContent = '复制代码'; }, 1400);
+    });
+    frame.appendChild(button);
+  });
+</script>

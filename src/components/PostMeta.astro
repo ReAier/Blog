@@ -1,0 +1,11 @@
+---
+interface Props { publishedAt: Date; updatedAt?: Date; readingMinutes?: number; tags?: string[]; }
+const { publishedAt, updatedAt, readingMinutes, tags = [] } = Astro.props;
+const format = (date: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+---
+<div class="post-meta">
+  <time datetime={publishedAt.toISOString()}>{format(publishedAt)}</time>
+  {updatedAt && <span>更新于 {format(updatedAt)}</span>}
+  {readingMinutes && <span>{readingMinutes} 分钟阅读</span>}
+  {tags.length > 0 && <span>{tags.join(' · ')}</span>}
+</div>

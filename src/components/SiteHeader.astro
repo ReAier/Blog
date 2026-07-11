@@ -1,0 +1,28 @@
+---
+import { SITE } from '../config';
+import PreferencePanel from './PreferencePanel.astro';
+const currentPath = Astro.url.pathname;
+---
+<header class="site-header">
+  <div class="container nav-shell glass">
+    <a class="site-mark" href="/" aria-label={`${SITE.title} 首页`}>AIER<span>.</span></a>
+    <nav class="site-nav" aria-label="主导航" data-site-nav data-open="false">
+      {SITE.navigation.map((item) => (
+        <a href={item.href} aria-current={item.href !== '/rss.xml' && (currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href))) ? 'page' : undefined}>{item.label}</a>
+      ))}
+    </nav>
+    <div class="header-actions">
+      <PreferencePanel />
+      <button class="icon-button mobile-toggle" type="button" data-menu-trigger aria-label="打开导航菜单" aria-expanded="false">☰</button>
+    </div>
+  </div>
+</header>
+<script>
+  const menuTrigger = document.querySelector<HTMLButtonElement>('[data-menu-trigger]');
+  const siteNav = document.querySelector<HTMLElement>('[data-site-nav]');
+  menuTrigger?.addEventListener('click', () => {
+    const open = siteNav?.dataset.open !== 'true';
+    if (siteNav) siteNav.dataset.open = String(open);
+    menuTrigger.setAttribute('aria-expanded', String(open));
+  });
+</script>

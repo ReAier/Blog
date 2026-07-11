@@ -1,0 +1,10 @@
+---
+import PostMeta from './PostMeta.astro';
+interface Props { post: { id: string; data: { title: string; description: string; publishedAt: Date; updatedAt?: Date; tags: string[] } }; }
+const { post } = Astro.props;
+---
+<article class="post-card">
+  <PostMeta publishedAt={post.data.publishedAt} updatedAt={post.data.updatedAt} tags={post.data.tags} />
+  <h2><a href={`/posts/${post.id}/`}>{post.data.title}</a></h2>
+  <p>{post.data.description}</p>
+</article>

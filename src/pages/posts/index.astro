@@ -1,0 +1,11 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { sortPostsNewestFirst } from '../../lib/content';
+const posts = sortPostsNewestFirst((await getCollection('blog')).filter((post) => !post.data.draft));
+---
+<BaseLayout title="文章" description="Aier 的全部文章。">
+  <header class="page-head container"><p class="eyebrow">All writing</p><h1 class="page-title">文章</h1><p class="lead">按时间排列的技术笔记、实践记录与个人思考。</p></header>
+  <section class="section container"><div class="post-grid">{posts.map((post) => <PostCard post={post} />)}</div></section>
+</BaseLayout>
