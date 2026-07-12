@@ -7,5 +7,11 @@ describe('code copy enhancement', () => {
     expect(component).toContain('data-copy-code');
     expect(component).toContain('复制代码');
     expect(component).toContain('navigator.clipboard.writeText');
+    for (const token of [
+      'data-code-enhanced',
+      "dataset.copyState = 'success'",
+      "dataset.copyState = 'error'",
+      'astro:page-load',
+    ]) expect(component).toContain(token);
   });
 });

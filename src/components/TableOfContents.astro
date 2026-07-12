@@ -3,7 +3,7 @@ interface Heading { depth: number; slug: string; text: string; }
 const { headings = [] } = Astro.props as { headings: Heading[] };
 const visible = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
-{visible.length > 0 && <nav class="toc glass" aria-label="文章目录">
+{visible.length > 0 && <nav class="toc glass" aria-label="文章目录" data-toc>
   <p class="preference-label">目录</p>
-  <ol>{visible.map((heading) => <li class={`toc-depth-${heading.depth}`}><a href={`#${heading.slug}`}>{heading.text}</a></li>)}</ol>
+  <ol>{visible.map((heading) => <li class={`toc-depth-${heading.depth}`}><a data-toc-link href={`#${heading.slug}`}>{heading.text}</a></li>)}</ol>
 </nav>}

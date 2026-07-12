@@ -75,4 +75,32 @@ describe('motion shell', () => {
     expect(source).toContain('createFrameGate(profile.fps)');
     expect(source).toContain("getPropertyValue('--accent-rgb')");
   });
+  it('reinitializes page interactions after Astro swaps', async () => {
+    const source = await read('src/scripts/motion-controller.ts');
+    for (const token of [
+      'initializeMotionPage',
+      "astro:page-load",
+      "astro:before-preparation",
+      'AbortController',
+      'IntersectionObserver',
+      'data-reading-progress',
+      'data-nav-indicator',
+      'data-menu-trigger',
+      'data-transition-veil',
+      'aria-current',
+      'isEnhancedNavigation',
+      'currentHref',
+    ]) {
+      expect(source).toContain(token);
+    }
+  });
+
+  it('keeps the canvas below content and the transition veil above it without blocking input', async () => {
+    const css = await read('src/styles/global.css');
+    expect(css).toContain('.fluid-canvas');
+    expect(css).toContain('z-index: 0');
+    expect(css).toContain('.transition-veil');
+    expect(css).toContain('z-index: 70');
+    expect(css).toContain('pointer-events: none');
+  });
 });

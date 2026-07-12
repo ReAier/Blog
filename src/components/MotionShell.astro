@@ -19,6 +19,7 @@ const { pageKind } = Astro.props;
 
 <script>
   import { startFluidBackground } from '../scripts/fluid-background';
+  import '../scripts/motion-controller';
 
   const canvas = document.querySelector<HTMLCanvasElement>('[data-fluid-canvas]');
   if (canvas && !window.__aierFluidCleanup) {

@@ -22,53 +22,85 @@
 </div>
 <script>
   const allowedAccents = new Set(['coral', 'teal', 'indigo', 'amber', 'rose']);
-  const root = document.documentElement;
-  const trigger = document.querySelector<HTMLButtonElement>('[data-preference-trigger]');
-  const panel = document.querySelector<HTMLElement>('[data-preference-panel]');
-  const themeButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-theme-choice]')];
-  const accentButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-accent]')];
-  const savedTheme = localStorage.getItem('aier-theme') || 'system';
-  const savedAccent = localStorage.getItem('aier-accent-v2') || 'rose';
+  let cleanupPreferences = () => {};
 
-  const applyTheme = (choice: string) => {
-    const resolved = choice === 'dark' || choice === 'light'
-      ? choice
-      : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    root.dataset.theme = resolved;
-    root.dataset.themeChoice = choice;
-    themeButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === choice)));
-  };
-  const applyAccent = (accent: string) => {
-    const safeAccent = allowedAccents.has(accent) ? accent : 'rose';
-    root.dataset.accent = safeAccent;
-    accentButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.accent === safeAccent)));
-  };
+  function initializePreferences() {
+    cleanupPreferences();
+    const controller = new AbortController();
+    const { signal } = controller;
+    const root = document.documentElement;
+    const trigger = document.querySelector<HTMLButtonElement>('[data-preference-trigger]');
+    const panel = document.querySelector<HTMLElement>('[data-preference-panel]');
+    const themeButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-theme-choice]')];
+    const accentButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-accent]')];
+    const colorScheme = matchMedia('(prefers-color-scheme: dark)');
 
-  applyTheme(savedTheme);
-  applyAccent(savedAccent);
-  trigger?.addEventListener('click', () => {
-    const open = panel?.dataset.open !== 'true';
-    if (panel) panel.dataset.open = String(open);
-    trigger.setAttribute('aria-expanded', String(open));
-  });
-  themeButtons.forEach((button) => button.addEventListener('click', () => {
-    const choice = button.dataset.themeChoice || 'system';
-    localStorage.setItem('aier-theme', choice);
-    applyTheme(choice);
-  }));
-  accentButtons.forEach((button) => button.addEventListener('click', () => {
-    const accent = button.dataset.accent || 'coral';
-    localStorage.setItem('aier-accent-v2', accent);
-    applyAccent(accent);
-  }));
-  document.addEventListener('click', (event) => {
-    const target = event.target instanceof Node ? event.target : null;
-    if (target && panel?.dataset.open === 'true' && !panel.contains(target) && !trigger?.contains(target)) {
-      panel.dataset.open = 'false';
+    const notify = () => {
+      window.dispatchEvent(new CustomEvent('aier:preference-change', {
+        detail: { theme: root.dataset.theme, accent: root.dataset.accent },
+      }));
+    };
+    const applyTheme = (choice: string, announce = true) => {
+      const safeChoice = choice === 'dark' || choice === 'light' || choice === 'system' ? choice : 'system';
+      const resolved = safeChoice === 'dark' || safeChoice === 'light'
+        ? safeChoice
+        : colorScheme.matches ? 'dark' : 'light';
+      root.dataset.theme = resolved;
+      root.dataset.themeChoice = safeChoice;
+      themeButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === safeChoice)));
+      if (announce) notify();
+    };
+    const applyAccent = (accent: string, announce = true) => {
+      const safeAccent = allowedAccents.has(accent) ? accent : 'rose';
+      root.dataset.accent = safeAccent;
+      accentButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.accent === safeAccent)));
+      if (announce) notify();
+    };
+    const closePanel = (restoreFocus = false) => {
+      if (panel) panel.dataset.open = 'false';
       trigger?.setAttribute('aria-expanded', 'false');
-    }
-  });
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if ((localStorage.getItem('aier-theme') || 'system') === 'system') applyTheme('system');
-  });
+      if (restoreFocus) trigger?.focus();
+    };
+
+    applyTheme(localStorage.getItem('aier-theme') || 'system', false);
+    applyAccent(localStorage.getItem('aier-accent-v2') || 'rose', false);
+    notify();
+
+    trigger?.addEventListener('click', () => {
+      const open = panel?.dataset.open !== 'true';
+      if (panel) panel.dataset.open = String(open);
+      trigger.setAttribute('aria-expanded', String(open));
+    }, { signal });
+
+    themeButtons.forEach((button) => button.addEventListener('click', () => {
+      const choice = button.dataset.themeChoice || 'system';
+      localStorage.setItem('aier-theme', choice);
+      applyTheme(choice);
+    }, { signal }));
+
+    accentButtons.forEach((button) => button.addEventListener('click', () => {
+      const accent = button.dataset.accent || 'rose';
+      localStorage.setItem('aier-accent-v2', accent);
+      applyAccent(accent);
+    }, { signal }));
+
+    document.addEventListener('click', (event) => {
+      const target = event.target instanceof Node ? event.target : null;
+      if (target && panel?.dataset.open === 'true' && !panel.contains(target) && !trigger?.contains(target)) closePanel();
+    }, { signal });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && panel?.dataset.open === 'true') closePanel(true);
+    }, { signal });
+
+    document.addEventListener('astro:before-preparation', () => closePanel(), { signal });
+    colorScheme.addEventListener('change', () => {
+      if ((localStorage.getItem('aier-theme') || 'system') === 'system') applyTheme('system');
+    }, { signal });
+
+    cleanupPreferences = () => controller.abort();
+  }
+
+  document.addEventListener('astro:page-load', initializePreferences);
+  initializePreferences();
 </script>

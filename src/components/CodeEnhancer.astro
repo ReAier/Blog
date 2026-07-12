@@ -1,22 +1,52 @@
 <script>
-  document.querySelectorAll<HTMLElement>('.prose pre').forEach((block) => {
-    if (block.parentElement?.classList.contains('code-frame')) return;
-    const frame = document.createElement('div');
-    frame.className = 'code-frame';
-    block.parentNode?.insertBefore(frame, block);
-    frame.appendChild(block);
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'code-copy';
-    button.setAttribute('data-copy-code', '');
-    button.textContent = '复制代码';
-    button.setAttribute('aria-label', '复制代码');
-    button.addEventListener('click', async () => {
-      const code = block.querySelector('code')?.textContent ?? block.textContent ?? '';
-      await navigator.clipboard.writeText(code);
-      button.textContent = '已复制';
-      setTimeout(() => { button.textContent = '复制代码'; }, 1400);
+  const idleLabel = '复制代码';
+
+  function enhanceCodeBlocks() {
+    document.querySelectorAll<HTMLElement>('.prose pre:not([data-code-enhanced])').forEach((block) => {
+      block.setAttribute('data-code-enhanced', '');
+      const frame = document.createElement('div');
+      frame.className = 'code-frame';
+      block.parentNode?.insertBefore(frame, block);
+      frame.appendChild(block);
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'code-copy';
+      button.setAttribute('data-copy-code', '');
+      button.dataset.copyState = 'idle';
+      button.textContent = idleLabel;
+      button.setAttribute('aria-label', idleLabel);
+
+      let resetTimer = 0;
+      const reset = (delay: number) => {
+        window.clearTimeout(resetTimer);
+        resetTimer = window.setTimeout(() => {
+          button.dataset.copyState = 'idle';
+          button.textContent = idleLabel;
+          button.setAttribute('aria-label', idleLabel);
+        }, delay);
+      };
+
+      button.addEventListener('click', async () => {
+        const code = block.querySelector('code')?.textContent ?? block.textContent ?? '';
+        try {
+          await navigator.clipboard.writeText(code);
+          button.dataset.copyState = 'success';
+          button.textContent = '已复制 ✓';
+          button.setAttribute('aria-label', '代码已复制');
+          reset(1400);
+        } catch {
+          button.dataset.copyState = 'error';
+          button.textContent = '复制失败';
+          button.setAttribute('aria-label', '复制失败，请手动复制');
+          reset(1800);
+        }
+      });
+
+      frame.appendChild(button);
     });
-    frame.appendChild(button);
-  });
+  }
+
+  document.addEventListener('astro:page-load', enhanceCodeBlocks);
+  enhanceCodeBlocks();
 </script>
