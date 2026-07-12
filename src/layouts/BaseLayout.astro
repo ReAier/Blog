@@ -1,12 +1,16 @@
 ---
 import '../styles/global.css';
 import 'katex/dist/katex.min.css';
+import { ClientRouter } from 'astro:transitions';
 import SeoHead from '../components/SeoHead.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import CodeEnhancer from '../components/CodeEnhancer.astro';
+import MotionShell from '../components/MotionShell.astro';
+import { resolvePageKind } from '../lib/motion';
 interface Props { title?: string; description?: string; image?: string; article?: boolean; }
 const props = Astro.props;
+const pageKind = props.article ? 'article' : resolvePageKind(Astro.url.pathname);
 ---
 <html lang="zh-CN" data-theme="light" data-accent="rose">
   <head>
@@ -28,8 +32,10 @@ const props = Astro.props;
       })();
     </script>
     <SeoHead {...props} />
+    <ClientRouter />
   </head>
-  <body>
+  <body data-page-kind={pageKind}>
+    <MotionShell pageKind={pageKind} />
     <a class="skip-link" href="#main-content">跳至正文</a>
     <SiteHeader />
     <main id="main-content" class="site-main"><slot /></main>

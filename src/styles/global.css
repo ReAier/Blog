@@ -170,3 +170,85 @@ button { color: inherit; }
 .code-frame { position: relative; }
 .code-copy { position: absolute; top: 10px; right: 10px; z-index: 2; border: 1px solid rgba(255,255,255,.16); border-radius: 8px; padding: 5px 8px; color: #d9ddd9; background: rgba(10,12,11,.72); font-family: var(--mono); font-size: .68rem; cursor: pointer; opacity: .72; }
 .code-copy:hover, .code-copy:focus-visible { opacity: 1; }
+
+/* Persistent motion shell and Astro view transitions */
+:root {
+  --motion-fast: 160ms;
+  --motion-base: 280ms;
+  --motion-page: 440ms;
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+.motion-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fluid-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: .52;
+}
+
+.transition-veil {
+  position: absolute;
+  width: 44vmax;
+  aspect-ratio: 1;
+  left: var(--veil-x, 50%);
+  top: var(--veil-y, 50%);
+  border-radius: 42% 58% 55% 45%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb), .26), transparent 68%);
+  filter: blur(28px);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+}
+
+.reading-progress {
+  position: fixed;
+  z-index: 80;
+  inset: 0 0 auto;
+  height: 2px;
+  opacity: 0;
+}
+
+.reading-progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--accent);
+  transform: scaleX(var(--reading-progress, 0));
+  transform-origin: left;
+}
+
+body[data-page-kind="article"] .reading-progress { opacity: 1; }
+
+::view-transition-old(root) {
+  animation: page-out var(--motion-page) var(--motion-ease) both;
+}
+
+::view-transition-new(root) {
+  animation: page-in var(--motion-page) var(--motion-ease) both;
+}
+
+@keyframes page-out {
+  to {
+    opacity: 0;
+    transform: scale(.985);
+    filter: blur(4px);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(3px);
+  }
+}
+
+.site-main, .site-footer { position: relative; z-index: 1; }

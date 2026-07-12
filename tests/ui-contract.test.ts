@@ -11,6 +11,8 @@ describe('visual shell contract', () => {
     expect(css).toContain(':focus-visible');
     expect(css).toContain('prefers-reduced-motion');
     expect(css).toContain('overflow-x: auto');
+    expect(css).toContain('::view-transition-old(root)');
+    expect(css).toContain('::view-transition-new(root)');
   });
 
   it('provides semantic shell landmarks and a skip link', async () => {

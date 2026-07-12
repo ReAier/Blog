@@ -1,0 +1,18 @@
+---
+interface Props {
+  pageKind: string;
+}
+
+const { pageKind } = Astro.props;
+---
+<div
+  class="motion-shell"
+  data-motion-shell
+  data-page-kind={pageKind}
+  transition:persist="motion-shell"
+>
+  <canvas class="fluid-canvas" data-fluid-canvas aria-hidden="true"></canvas>
+  <div class="transition-veil" data-transition-veil aria-hidden="true"></div>
+  <div class="reading-progress" data-reading-progress aria-hidden="true"><span></span></div>
+  <p class="sr-only" data-motion-status aria-live="polite"></p>
+</div>
