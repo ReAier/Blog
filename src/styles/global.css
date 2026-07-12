@@ -202,22 +202,23 @@ button { color: inherit; }
 .transition-veil {
   position: fixed;
   z-index: 70;
-  width: 44vmax;
-  aspect-ratio: 1;
-  left: var(--veil-x, 50%);
-  top: var(--veil-y, 50%);
-  border-radius: 42% 58% 55% 45%;
-  background: radial-gradient(circle, rgba(var(--accent-rgb), .3), transparent 68%);
-  filter: blur(28px);
-  transform: translate(-50%, -50%) scale(0);
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--veil-x, 50%) var(--veil-y, 50%),
+    rgba(var(--accent-rgb), .34) 0%,
+    rgba(var(--accent-rgb), .18) 30%,
+    rgba(var(--accent-rgb), .06) 52%,
+    transparent 76%
+  );
   opacity: 0;
+  filter: blur(18px);
   pointer-events: none;
-  transition: transform var(--motion-page) var(--motion-ease), opacity var(--motion-base) ease;
+  transition: opacity var(--motion-page) var(--motion-ease), filter var(--motion-page) var(--motion-ease);
 }
 
 html[data-transitioning="true"] .transition-veil {
-  transform: translate(-50%, -50%) scale(3.2);
   opacity: .72;
+  filter: blur(4px);
 }
 
 .reading-progress {
@@ -406,7 +407,6 @@ body[data-header-compact="true"] .nav-shell { min-height: 54px; padding-block: 6
   .site-nav[data-open="true"] a:nth-child(3) { animation-delay: 70ms; }
   .site-nav[data-open="true"] a:nth-child(4) { animation-delay: 105ms; }
   .site-nav[data-open="true"] a:nth-child(5) { animation-delay: 140ms; }
-  .site-nav[data-open="true"] a:nth-child(6) { animation-delay: 175ms; }
   @keyframes menu-item-in { from { opacity: 0; transform: translateY(-7px); } }
 }
 

@@ -210,4 +210,19 @@ describe('motion safety and accessibility', () => {
     const css = await read('src/styles/global.css');
     expect(css).toContain('html[data-motion-ready="true"] [data-reveal][data-revealed="true"]');
   });
+
+  it('uses a full-viewport transition veil without a square boundary', async () => {
+    const css = await read('src/styles/global.css');
+    expect(css).toContain('.transition-veil');
+    expect(css).toContain('inset: 0;');
+    expect(css).not.toContain('width: 44vmax;');
+    expect(css).not.toContain('aspect-ratio: 1;');
+  });
+
+  it('keeps RSS available without showing it in the top navigation', async () => {
+    const config = await read('src/config.ts');
+    const rss = await read('src/pages/rss.xml.ts');
+    expect(config).not.toContain("{ label: 'RSS', href: '/rss.xml' }");
+    expect(rss).toContain("from '@astrojs/rss'");
+  });
 });

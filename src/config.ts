@@ -14,7 +14,6 @@ export const SITE = {
     { label: '标签', href: '/tags/' },
     { label: '归档', href: '/archive/' },
     { label: '关于', href: '/about/' },
-    { label: 'RSS', href: '/rss.xml' },
   ],
   accents: ACCENTS,
 } as const;

@@ -8,7 +8,7 @@ const currentPath = Astro.url.pathname;
     <a class="site-mark" href="/" aria-label={`${SITE.title} 首页`}>AIER<span>.</span></a>
     <nav class="site-nav" aria-label="主导航" data-site-nav data-open="false">
       {SITE.navigation.map((item) => (
-        <a href={item.href} aria-current={item.href !== '/rss.xml' && (currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href))) ? 'page' : undefined}>{item.label}</a>
+        <a href={item.href} aria-current={currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href)) ? 'page' : undefined}>{item.label}</a>
       ))}
       <span class="nav-indicator" data-nav-indicator aria-hidden="true"></span>
     </nav>
