@@ -181,3 +181,33 @@ describe('page-specific motion coverage', () => {
     ]) expect(css).toContain(token);
   });
 });
+
+describe('motion safety and accessibility', () => {
+  it('fully disables the fluid canvas, transition veil, and reveal translation for reduced motion', async () => {
+    const css = await read('src/styles/global.css');
+    const reducedMotion = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
+
+    expect(reducedMotion).toContain('.fluid-canvas,');
+    expect(reducedMotion).toContain('.transition-veil');
+    expect(reducedMotion).toContain('display: none !important');
+    expect(reducedMotion).toContain('::view-transition-old(root),');
+    expect(reducedMotion).toContain('::view-transition-new(root)');
+    expect(reducedMotion).toContain('animation: none !important');
+    expect(reducedMotion).toContain('[data-reveal]');
+    expect(reducedMotion).toContain('.post-card[data-reveal]');
+    expect(reducedMotion).toContain('transform: none !important');
+    expect(reducedMotion).toContain('translate: none !important');
+  });
+
+  it('provides a static CSS background when WebGL falls back', async () => {
+    const css = await read('src/styles/global.css');
+    expect(css).toContain('.fluid-canvas[data-fluid-fallback="true"]');
+    expect(css).toContain('radial-gradient');
+    expect(css).toContain('background-color: transparent');
+  });
+
+  it('revealed state overrides the progressive enhancement hiding rule', async () => {
+    const css = await read('src/styles/global.css');
+    expect(css).toContain('html[data-motion-ready="true"] [data-reveal][data-revealed="true"]');
+  });
+});

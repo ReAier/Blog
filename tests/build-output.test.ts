@@ -24,6 +24,18 @@ describe('production build output', () => {
     expect(html).toContain('http://blog.reaier.top/');
   });
 
+  it('includes the persistent motion shell in production HTML', async () => {
+    for (const file of ['index.html', 'posts/markdown-guide/index.html']) {
+      const html = await readFile(dist(file), 'utf8');
+      expect(html).toContain('data-motion-shell');
+      expect(html).toContain('data-fluid-canvas');
+      expect(html).toContain('data-transition-veil');
+      expect(html).toContain('data-reading-progress');
+      expect(html).toContain('data-motion-status');
+      expect(html).toContain('data-astro-transition-persist="motion-shell"');
+    }
+  });
+
   it('renders Markdown math with KaTeX', async () => {
     const html = await readFile(dist('posts/markdown-guide/index.html'), 'utf8');
     expect(html).toContain('class="katex-display"');
