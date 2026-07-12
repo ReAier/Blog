@@ -23,4 +23,10 @@ describe('production build output', () => {
     expect(html).toContain('rel="canonical"');
     expect(html).toContain('http://blog.reaier.top/');
   });
+
+  it('renders Markdown math with KaTeX', async () => {
+    const html = await readFile(dist('posts/markdown-guide/index.html'), 'utf8');
+    expect(html).toContain('class="katex-display"');
+    expect(html).toContain('∫');
+  });
 });
