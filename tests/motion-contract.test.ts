@@ -225,4 +225,10 @@ describe('motion safety and accessibility', () => {
     expect(config).not.toContain("{ label: 'RSS', href: '/rss.xml' }");
     expect(rss).toContain("from '@astrojs/rss'");
   });
+
+  it('spreads the fluid color field across wide viewports', async () => {
+    const script = await read('src/scripts/fluid-background.ts');
+    expect(script).toContain('smoothstep(1.45,.08');
+    expect(script).not.toContain('smoothstep(.72,.05');
+  });
 });

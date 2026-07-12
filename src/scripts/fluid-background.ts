@@ -6,7 +6,7 @@ import {
 } from '../lib/motion';
 
 const VERTEX = `attribute vec2 position;void main(){gl_Position=vec4(position,0.,1.);}`;
-const FRAGMENT = `precision mediump float;uniform vec2 resolution,pointer;uniform float time,intensity,darkMode;uniform vec3 accent;float wave(vec2 p){return sin(p.x*2.1+time*.18)+sin(p.y*2.7-time*.14)+sin((p.x+p.y)*1.4+time*.11);}void main(){vec2 uv=(gl_FragCoord.xy-.5*resolution.xy)/min(resolution.x,resolution.y);float field=wave(uv+pointer*.08)*.166;float glow=smoothstep(.72,.05,length(uv-pointer*.22)+field*.12);vec3 paper=mix(vec3(.94,.92,.89),vec3(.055,.06,.075),darkMode);vec3 color=mix(paper,accent,.12+.16*glow+.06*field);gl_FragColor=vec4(color,intensity*(.16+.24*glow));}`;
+const FRAGMENT = `precision mediump float;uniform vec2 resolution,pointer;uniform float time,intensity,darkMode;uniform vec3 accent;float wave(vec2 p){return sin(p.x*2.1+time*.18)+sin(p.y*2.7-time*.14)+sin((p.x+p.y)*1.4+time*.11);}void main(){vec2 uv=(gl_FragCoord.xy-.5*resolution.xy)/min(resolution.x,resolution.y);float field=wave(uv+pointer*.08)*.166;float glow=smoothstep(1.45,.08,length(uv-pointer*.12)+field*.08);vec3 paper=mix(vec3(.94,.92,.89),vec3(.055,.06,.075),darkMode);vec3 color=mix(paper,accent,.12+.16*glow+.06*field);gl_FragColor=vec4(color,intensity*(.16+.24*glow));}`;
 
 interface FluidResources {
   program: WebGLProgram;
