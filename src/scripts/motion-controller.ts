@@ -40,6 +40,14 @@ export function initializeMotionPage(): () => void {
 
   if (shell) shell.dataset.pageKind = pageKind;
 
+  const updateHeaderDensity = () => {
+    document.body.dataset.headerCompact = String(scrollY > 32);
+  };
+  const headerFrame = scheduleFrame(updateHeaderDensity);
+  addEventListener('scroll', headerFrame.schedule, { passive: true, signal });
+  onAbort(signal, headerFrame.cancel);
+  updateHeaderDensity();
+
   const revealTargets = [...document.querySelectorAll<HTMLElement>('[data-reveal]')];
   if ('IntersectionObserver' in window && revealTargets.length) {
     const revealObserver = new IntersectionObserver((entries) => {
@@ -53,6 +61,24 @@ export function initializeMotionPage(): () => void {
     onAbort(signal, () => revealObserver.disconnect());
   } else {
     revealTargets.forEach((target) => { target.dataset.revealed = 'true'; });
+  }
+
+  const hoverless = matchMedia('(hover: none)');
+  if (!hoverless.matches) {
+    const motionCards = [...document.querySelectorAll<HTMLElement>('[data-motion-card]')];
+    motionCards.forEach((card) => {
+      card.addEventListener('pointermove', (event) => {
+        const rect = card.getBoundingClientRect();
+        const x = rect.width ? ((event.clientX - rect.left) / rect.width) * 100 : 50;
+        const y = rect.height ? ((event.clientY - rect.top) / rect.height) * 100 : 50;
+        card.style.setProperty('--pointer-x', `${Math.max(0, Math.min(100, x))}%`);
+        card.style.setProperty('--pointer-y', `${Math.max(0, Math.min(100, y))}%`);
+      }, { signal });
+      card.addEventListener('pointerleave', () => {
+        card.style.setProperty('--pointer-x', '50%');
+        card.style.setProperty('--pointer-y', '50%');
+      }, { signal });
+    });
   }
 
   if (pageKind === 'article' && progress) {
@@ -145,11 +171,13 @@ export function initializeMotionPage(): () => void {
     closeMenu();
     clearTimeout(transitionFallback);
     transitionFallback = window.setTimeout(() => {
-      document.documentElement.dataset.transitioning = 'false';
+      document.documentElement.dataset.motionReady = 'true';
+  document.documentElement.dataset.transitioning = 'false';
     }, 1200);
   }, { signal });
   onAbort(signal, () => clearTimeout(transitionFallback));
 
+  document.documentElement.dataset.motionReady = 'true';
   document.documentElement.dataset.transitioning = 'false';
   if (status) status.textContent = `${document.title} 已加载`;
 

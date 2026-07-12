@@ -104,3 +104,80 @@ describe('motion shell', () => {
     expect(css).toContain('pointer-events: none');
   });
 });
+
+describe('page-specific motion coverage', () => {
+  it('marks every page family for reveal without animating prose paragraphs individually', async () => {
+    const files = [
+      'src/pages/index.astro',
+      'src/pages/posts/index.astro',
+      'src/pages/tags/index.astro',
+      'src/pages/tags/[tag].astro',
+      'src/pages/archive.astro',
+      'src/pages/about.astro',
+      'src/pages/404.astro',
+      'src/layouts/PostLayout.astro',
+    ];
+    for (const file of files) expect(await read(file)).toContain('data-reveal');
+
+    const postLayout = await read('src/layouts/PostLayout.astro');
+    expect(postLayout).toMatch(/class="prose"[^>]*data-reveal/);
+    expect(postLayout).not.toMatch(/<p[^>]*data-reveal/);
+  });
+
+  it('caps reveal delays at 210ms and marks article regions semantically', async () => {
+    const sources = await Promise.all([
+      read('src/pages/index.astro'),
+      read('src/pages/posts/index.astro'),
+      read('src/pages/tags/index.astro'),
+      read('src/pages/tags/[tag].astro'),
+      read('src/pages/archive.astro'),
+      read('src/pages/about.astro'),
+      read('src/pages/404.astro'),
+      read('src/layouts/PostLayout.astro'),
+    ]);
+    const joined = sources.join('\n');
+    for (const delay of ['0ms', '70ms', '140ms', '210ms']) expect(joined).toContain(`--reveal-delay: ${delay}`);
+    const delays = [...joined.matchAll(/--reveal-delay:\s*(\d+)ms/g)].map((match) => Number(match[1]));
+    expect(Math.max(...delays)).toBeLessThanOrEqual(210);
+
+    const layout = await read('src/layouts/PostLayout.astro');
+    for (const token of ['article-header', 'article-layout', 'class="prose"', 'article-aside', 'article-footer']) {
+      expect(layout).toContain(token);
+    }
+  });
+
+  it('adds pointer-light cards and disables pointer behavior on hoverless devices', async () => {
+    const card = await read('src/components/PostCard.astro');
+    const home = await read('src/pages/index.astro');
+    const controller = await read('src/scripts/motion-controller.ts');
+    const css = await read('src/styles/global.css');
+
+    expect(card).toContain('data-motion-card');
+    expect(home).toContain('data-motion-card');
+    for (const token of [
+      "matchMedia('(hover: none)')",
+      "querySelectorAll<HTMLElement>('[data-motion-card]')",
+      "style.setProperty('--pointer-x'",
+      "style.setProperty('--pointer-y'",
+      "pointermove",
+      "pointerleave",
+    ]) expect(controller).toContain(token);
+    expect(css).toContain('var(--pointer-x, 50%)');
+    expect(css).toContain('var(--pointer-y, 50%)');
+    expect(css).toContain('@media (hover: none)');
+  });
+
+  it('defines restrained hero, archive, menu, header, and common microinteractions', async () => {
+    const css = await read('src/styles/global.css');
+    for (const token of [
+      'hero-sweep',
+      'archive-item::before',
+      '.site-nav[data-open="true"] a',
+      'body[data-header-compact="true"] .nav-shell',
+      '.text-link:hover',
+      '.tag:active',
+      '.post-card:active',
+      'prefers-reduced-motion: reduce',
+    ]) expect(css).toContain(token);
+  });
+});
