@@ -16,3 +16,12 @@ const { pageKind } = Astro.props;
   <div class="reading-progress" data-reading-progress aria-hidden="true"><span></span></div>
   <p class="sr-only" data-motion-status aria-live="polite"></p>
 </div>
+
+<script>
+  import { startFluidBackground } from '../scripts/fluid-background';
+
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-fluid-canvas]');
+  if (canvas && !window.__aierFluidCleanup) {
+    window.__aierFluidCleanup = startFluidBackground(canvas);
+  }
+</script>
