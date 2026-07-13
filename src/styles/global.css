@@ -92,9 +92,7 @@ button { color: inherit; }
 .text-link { color: var(--muted); font-family: var(--mono); font-size: .76rem; letter-spacing: .06em; text-decoration: none; }
 .post-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
 .post-card { min-height: 270px; border: 1px solid var(--line); border-radius: 20px; padding: 26px; background: rgba(255,255,255,.2); position: relative; overflow: hidden; transition: transform .25s ease, border-color .25s ease, background .25s ease; }
-.post-card::before { content: ""; position: absolute; width: 210px; height: 210px; right: -120px; top: -120px; border-radius: 50%; background: rgba(var(--accent-rgb), .12); filter: blur(20px); transition: transform .3s ease; }
 .post-card:hover { transform: translateY(-5px); border-color: rgba(var(--accent-rgb), .36); background: var(--surface); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
-.post-card:hover::before { transform: translate(-35px, 35px); }
 .post-card h2, .post-card h3 { position: relative; margin: 36px 0 10px; font-family: var(--serif); font-size: clamp(1.45rem,3vw,2rem); line-height: 1.2; letter-spacing: -.035em; }
 .post-card h2 a, .post-card h3 a { text-decoration: none; }
 .post-card p { position: relative; color: var(--muted); }
@@ -202,23 +200,22 @@ button { color: inherit; }
 .transition-veil {
   position: fixed;
   z-index: 70;
-  inset: 0;
-  background: radial-gradient(
-    circle at var(--veil-x, 50%) var(--veil-y, 50%),
-    rgba(var(--accent-rgb), .34) 0%,
-    rgba(var(--accent-rgb), .18) 30%,
-    rgba(var(--accent-rgb), .06) 52%,
-    transparent 76%
-  );
+  width: 44vmax;
+  aspect-ratio: 1;
+  left: var(--veil-x, 50%);
+  top: var(--veil-y, 50%);
+  border-radius: 42% 58% 55% 45%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb), .3), transparent 68%);
+  filter: blur(28px);
+  transform: translate(-50%, -50%) scale(0);
   opacity: 0;
-  filter: blur(18px);
   pointer-events: none;
-  transition: opacity var(--motion-page) var(--motion-ease), filter var(--motion-page) var(--motion-ease);
+  transition: transform var(--motion-page) var(--motion-ease), opacity var(--motion-base) ease;
 }
 
 html[data-transitioning="true"] .transition-veil {
+  transform: translate(-50%, -50%) scale(3.2);
   opacity: .72;
-  filter: blur(4px);
 }
 
 .reading-progress {
@@ -360,7 +357,7 @@ body[data-header-compact="true"] .nav-shell { min-height: 54px; padding-block: 6
   z-index: 0;
   inset: -1px;
   border-radius: inherit;
-  background: radial-gradient(260px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(var(--accent-rgb), .15), transparent 68%);
+  background: radial-gradient(ellipse 125% 150% at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(var(--accent-rgb), .18) 0%, rgba(var(--accent-rgb), .11) 42%, rgba(var(--accent-rgb), .045) 72%, transparent 100%);
   filter: none;
   opacity: 0;
   transform: none;

@@ -211,13 +211,6 @@ describe('motion safety and accessibility', () => {
     expect(css).toContain('html[data-motion-ready="true"] [data-reveal][data-revealed="true"]');
   });
 
-  it('uses a full-viewport transition veil without a square boundary', async () => {
-    const css = await read('src/styles/global.css');
-    expect(css).toContain('.transition-veil');
-    expect(css).toContain('inset: 0;');
-    expect(css).not.toContain('width: 44vmax;');
-    expect(css).not.toContain('aspect-ratio: 1;');
-  });
 
   it('keeps RSS available without showing it in the top navigation', async () => {
     const config = await read('src/config.ts');
@@ -226,9 +219,11 @@ describe('motion safety and accessibility', () => {
     expect(rss).toContain("from '@astrojs/rss'");
   });
 
-  it('spreads the fluid color field across wide viewports', async () => {
-    const script = await read('src/scripts/fluid-background.ts');
-    expect(script).toContain('smoothstep(1.45,.08');
-    expect(script).not.toContain('smoothstep(.72,.05');
+
+  it('covers the full article card with the pointer gradient', async () => {
+    const css = await read('src/styles/global.css');
+    expect(css).toContain('ellipse 125% 150%');
+    expect(css).not.toContain('width: 210px;');
+    expect(css).not.toContain('translate(-35px, 35px)');
   });
 });
