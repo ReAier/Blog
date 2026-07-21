@@ -23,6 +23,14 @@ describe('visual shell contract', () => {
     expect(layout).toContain('<SiteFooter');
   });
 
+  it('provides the approved ICP registration link in the global footer', async () => {
+    const footer = await read('src/components/SiteFooter.astro');
+    expect(footer).toContain('赣ICP备2026016483号');
+    expect(footer).toContain('href=\"https://beian.miit.gov.cn/\"');
+    expect(footer).toContain('target=\"_blank\"');
+    expect(footer).toContain('rel=\"noopener noreferrer\"');
+  });
+
   it('provides theme controls and all five labeled accent choices', async () => {
     const panel = await read('src/components/PreferencePanel.astro');
     expect(panel).toContain('aria-label="外观设置"');
