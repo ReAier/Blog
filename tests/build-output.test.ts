@@ -21,7 +21,7 @@ describe('production build output', () => {
   it('adds canonical metadata to the home page', async () => {
     const html = await readFile(dist('index.html'), 'utf8');
     expect(html).toContain('rel="canonical"');
-    expect(html).toContain('http://blog.reaier.top/');
+    expect(html).toContain('https://blog.reaier.top/');
   });
 
   it('includes the persistent motion shell in production HTML', async () => {
@@ -36,6 +36,11 @@ describe('production build output', () => {
     }
   });
 
+  it('preserves straight apostrophes in Markdown prose', async () => {
+    const html = await readFile(dist('posts/welcome/index.html'), 'utf8');
+    expect(html).toContain("<strong>Aier's blogs</strong>");
+    expect(html).not.toContain('<strong>Aier’s blogs</strong>');
+  });
   it('renders Markdown math with KaTeX', async () => {
     const html = await readFile(dist('posts/markdown-guide/index.html'), 'utf8');
     expect(html).toContain('class="katex-display"');

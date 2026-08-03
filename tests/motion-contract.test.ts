@@ -95,6 +95,14 @@ describe('motion shell', () => {
     }
   });
 
+  it('keeps page content visible without a reveal lifecycle', async () => {
+    const controller = await read('src/scripts/motion-controller.ts');
+    const css = await read('src/styles/global.css');
+    expect(controller).not.toContain("querySelectorAll<HTMLElement>('[data-reveal]')");
+    expect(controller).not.toContain("dataset.revealed = 'true'");
+    expect(css).not.toContain('html[data-motion-ready="true"] [data-reveal]');
+  });
+
   it('keeps the canvas below content and the transition veil above it without blocking input', async () => {
     const css = await read('src/styles/global.css');
     expect(css).toContain('.fluid-canvas');
@@ -106,8 +114,9 @@ describe('motion shell', () => {
 });
 
 describe('page-specific motion coverage', () => {
-  it('marks every page family for reveal without animating prose paragraphs individually', async () => {
+  it('renders every page family without reveal markers or delayed visibility', async () => {
     const files = [
+      'src/components/PostCard.astro',
       'src/pages/index.astro',
       'src/pages/posts/index.astro',
       'src/pages/tags/index.astro',
@@ -115,30 +124,14 @@ describe('page-specific motion coverage', () => {
       'src/pages/archive.astro',
       'src/pages/about.astro',
       'src/pages/404.astro',
+      'src/pages/clips/[slug].astro',
       'src/layouts/PostLayout.astro',
     ];
-    for (const file of files) expect(await read(file)).toContain('data-reveal');
-
-    const postLayout = await read('src/layouts/PostLayout.astro');
-    expect(postLayout).toMatch(/class="prose"[^>]*data-reveal/);
-    expect(postLayout).not.toMatch(/<p[^>]*data-reveal/);
-  });
-
-  it('caps reveal delays at 210ms and marks article regions semantically', async () => {
-    const sources = await Promise.all([
-      read('src/pages/index.astro'),
-      read('src/pages/posts/index.astro'),
-      read('src/pages/tags/index.astro'),
-      read('src/pages/tags/[tag].astro'),
-      read('src/pages/archive.astro'),
-      read('src/pages/about.astro'),
-      read('src/pages/404.astro'),
-      read('src/layouts/PostLayout.astro'),
-    ]);
-    const joined = sources.join('\n');
-    for (const delay of ['0ms', '70ms', '140ms', '210ms']) expect(joined).toContain(`--reveal-delay: ${delay}`);
-    const delays = [...joined.matchAll(/--reveal-delay:\s*(\d+)ms/g)].map((match) => Number(match[1]));
-    expect(Math.max(...delays)).toBeLessThanOrEqual(210);
+    for (const file of files) {
+      const content = await read(file);
+      expect(content).not.toContain('data-reveal');
+      expect(content).not.toContain('--reveal-delay');
+    }
 
     const layout = await read('src/layouts/PostLayout.astro');
     for (const token of ['article-header', 'article-layout', 'class="prose"', 'article-aside', 'article-footer']) {
@@ -170,7 +163,6 @@ describe('page-specific motion coverage', () => {
   it('defines restrained hero, archive, menu, header, and common microinteractions', async () => {
     const css = await read('src/styles/global.css');
     for (const token of [
-      'hero-sweep',
       'archive-item::before',
       '.site-nav[data-open="true"] a',
       'body[data-header-compact="true"] .nav-shell',
@@ -183,7 +175,7 @@ describe('page-specific motion coverage', () => {
 });
 
 describe('motion safety and accessibility', () => {
-  it('fully disables the fluid canvas, transition veil, and reveal translation for reduced motion', async () => {
+  it('fully disables the fluid canvas and transition veil for reduced motion', async () => {
     const css = await read('src/styles/global.css');
     const reducedMotion = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
 
@@ -193,8 +185,6 @@ describe('motion safety and accessibility', () => {
     expect(reducedMotion).toContain('::view-transition-old(root),');
     expect(reducedMotion).toContain('::view-transition-new(root)');
     expect(reducedMotion).toContain('animation: none !important');
-    expect(reducedMotion).toContain('[data-reveal]');
-    expect(reducedMotion).toContain('.post-card[data-reveal]');
     expect(reducedMotion).toContain('transform: none !important');
     expect(reducedMotion).toContain('translate: none !important');
   });
@@ -206,9 +196,10 @@ describe('motion safety and accessibility', () => {
     expect(css).toContain('background-color: transparent');
   });
 
-  it('revealed state overrides the progressive enhancement hiding rule', async () => {
+  it('does not define reveal-dependent hiding styles', async () => {
     const css = await read('src/styles/global.css');
-    expect(css).toContain('html[data-motion-ready="true"] [data-reveal][data-revealed="true"]');
+    expect(css).not.toContain('[data-revealed="true"]');
+    expect(css).not.toContain('--reveal-delay');
   });
 
 

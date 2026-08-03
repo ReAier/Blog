@@ -7,11 +7,12 @@ import { remarkClipCards } from './src/lib/remark-clip-card';
 import { remarkReferenceCards } from './src/lib/remark-reference-card';
 
 export default defineConfig({
-  site: 'http://blog.reaier.top',
+  site: 'https://blog.reaier.top',
   output: 'static',
   integrations: [sitemap({ filter: (page) => !page.includes('/clips/') })],
   markdown: {
     processor: unified({
+      smartypants: false,
       remarkPlugins: [remarkMath, remarkClipCards, remarkReferenceCards],
       rehypePlugins: [rehypeKatex],
     }),

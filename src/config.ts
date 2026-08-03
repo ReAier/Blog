@@ -7,7 +7,7 @@ export const SITE = {
   tagline: '关于技术、AI 与持续构建',
   author: 'Aier',
   locale: 'zh-CN',
-  url: 'http://blog.reaier.top',
+  url: 'https://blog.reaier.top',
   navigation: [
     { label: '首页', href: '/' },
     { label: '文章', href: '/posts/' },

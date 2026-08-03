@@ -8,6 +8,6 @@ const years = [...groups.keys()].sort((a, b) => b - a);
 const date = (value: Date) => new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' }).format(value);
 ---
 <BaseLayout title="归档" description="Aier's blogs 的文章时间线。">
-  <header class="page-head container" data-reveal style="--reveal-delay: 0ms"><p class="eyebrow">Timeline</p><h1 class="page-title">归档</h1><p class="lead">沿着时间，重新查看已经写下的内容。</p></header>
-  <section class="section container" data-reveal style="--reveal-delay: 70ms">{years.map((year, yearIndex) => <section class="archive-group" data-archive-group data-reveal style={`--reveal-delay: ${Math.min(yearIndex * 70, 210)}ms`}><h2 class="archive-year">{year}</h2><ol class="archive-list">{groups.get(year)?.map((post, index) => <li class="archive-item" data-reveal style={`--reveal-delay: ${Math.min(index * 70, 210)}ms`}><time datetime={post.data.publishedAt.toISOString()}>{date(post.data.publishedAt)}</time><a href={`/posts/${post.id}/`}>{post.data.title}</a><span>{post.data.tags[0]}</span></li>)}</ol></section>)}</section>
+  <header class="page-head container"><p class="eyebrow">Timeline</p><h1 class="page-title">归档</h1><p class="lead">沿着时间，重新查看已经写下的内容。</p></header>
+  <section class="section container">{years.map((year) => <section class="archive-group" data-archive-group><h2 class="archive-year">{year}</h2><ol class="archive-list">{groups.get(year)?.map((post) => <li class="archive-item"><time datetime={post.data.publishedAt.toISOString()}>{date(post.data.publishedAt)}</time><a href={`/posts/${post.id}/`}>{post.data.title}</a><span>{post.data.tags[0]}</span></li>)}</ol></section>)}</section>
 </BaseLayout>

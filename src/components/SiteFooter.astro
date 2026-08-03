@@ -4,7 +4,13 @@ import { SITE } from '../config';
 <footer class="site-footer">
   <div class="container footer-grid">
     <span>© {new Date().getFullYear()} {SITE.author}</span>
-    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">赣ICP备2026016483号</a>
+    <nav class="footer-links" aria-label="网站备案与联系方式">
+      <div class="footer-records">
+        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">赣ICP备2026016483号</a>
+        <a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=36012402000305" target="_blank" rel="noopener noreferrer">赣公网安备36012402000305号</a>
+      </div>
+      <a class="footer-email" href="mailto:re.aier@outlook.com">re.aier@outlook.com</a>
+    </nav>
     <span>Built with Astro · Keep building.</span>
   </div>
 </footer>

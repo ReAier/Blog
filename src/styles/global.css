@@ -113,6 +113,10 @@ button { color: inherit; }
 .prose th, .prose td { border-bottom: 1px solid var(--line); padding: 10px 14px; text-align: left; white-space: nowrap; }
 .site-footer { margin-top: 70px; padding: 28px 0 38px; border-top: 1px solid var(--line); color: var(--muted); }
 .footer-grid { display: flex; justify-content: space-between; gap: 20px; font-family: var(--mono); font-size: .72rem; }
+.footer-links { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.footer-records { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; }
+.footer-links a { color: inherit; text-decoration: none; }
+.footer-links a:hover { color: var(--accent); }
 .page-head { padding: 56px 0 40px; }
 .page-title { margin: 0; font-family: var(--serif); font-size: clamp(2.8rem, 7vw, 6rem); letter-spacing: -.065em; line-height: .96; }
 .empty-state { padding: 50px 0; color: var(--muted); }
@@ -147,6 +151,8 @@ button { color: inherit; }
 .article-title { margin: 0 0 22px; font-family: var(--serif); font-size: clamp(2.8rem, 7vw, 6.4rem); line-height: .98; letter-spacing: -.065em; }
 .article-description { max-width: 620px; color: var(--muted); font-size: 1.18rem; }
 .article-layout { display: grid; grid-template-columns: minmax(0, var(--reading)) minmax(190px, 1fr); justify-content: space-between; gap: 70px; align-items: start; }
+.article-layout > .prose { min-width: 0; }
+.prose .katex-display { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
 .article-aside { position: sticky; top: 112px; }
 .toc { padding: 18px; border-radius: 15px; }
 .toc ol { list-style: none; margin: 0; padding: 0; }
@@ -263,13 +269,6 @@ body[data-page-kind="article"] .reading-progress { opacity: 1; }
 
 .site-main, .site-footer { position: relative; z-index: 1; }
 
-html[data-motion-ready="true"] [data-reveal] {
-  opacity: 0;
-  transform: translateY(16px);
-  transition: opacity var(--motion-base) var(--motion-ease), transform var(--motion-base) var(--motion-ease);
-  transition-delay: var(--reveal-delay, 0ms);
-}
-html[data-motion-ready="true"] [data-reveal][data-revealed="true"] { opacity: 1; transform: none; }
 .nav-indicator {
   position: absolute;
   height: 2px;
@@ -325,18 +324,6 @@ body[data-header-compact="true"] .nav-shell { min-height: 54px; padding-block: 6
 .site-mark span { display: inline-block; transform-origin: center; transition: transform var(--motion-fast) var(--motion-ease), color var(--motion-fast); }
 .site-mark:hover span { transform: scale(1.35); }
 
-[data-hero-title] em { position: relative; display: inline-block; overflow: hidden; }
-[data-hero-title] em::after {
-  content: "";
-  position: absolute;
-  inset: 7% -18%;
-  background: linear-gradient(105deg, transparent 24%, rgba(255, 255, 255, .72) 50%, transparent 76%);
-  mix-blend-mode: soft-light;
-  transform: translateX(-130%) skewX(-16deg);
-  pointer-events: none;
-}
-[data-hero-title][data-revealed="true"] em::after { animation: hero-sweep 820ms 240ms var(--motion-ease) both; }
-@keyframes hero-sweep { to { transform: translateX(130%) skewX(-16deg); } }
 
 .post-card {
   --pointer-x: 50%;
@@ -344,13 +331,6 @@ body[data-header-compact="true"] .nav-shell { min-height: 54px; padding-block: 6
   isolation: isolate;
   transition: transform var(--motion-base) var(--motion-ease), border-color var(--motion-base), background-color var(--motion-base), box-shadow var(--motion-base);
 }
-.post-card[data-reveal] {
-  transform: none;
-  translate: 0 16px;
-  transition: opacity var(--motion-base) var(--motion-ease), translate var(--motion-base) var(--motion-ease), transform var(--motion-base) var(--motion-ease), border-color var(--motion-base), background-color var(--motion-base), box-shadow var(--motion-base);
-  transition-delay: var(--reveal-delay, 0ms), var(--reveal-delay, 0ms), 0ms, 0ms, 0ms, 0ms;
-}
-.post-card[data-reveal][data-revealed="true"] { translate: 0 0; }
 .post-card::before {
   content: "";
   position: absolute;
@@ -390,11 +370,9 @@ body[data-header-compact="true"] .nav-shell { min-height: 54px; padding-block: 6
 
 .archive-group { position: relative; }
 .archive-list { position: relative; margin-left: 8px; padding-left: 24px; }
-.archive-list::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: linear-gradient(var(--accent), var(--line)); transform: scaleY(0); transform-origin: top; transition: transform 700ms var(--motion-ease); opacity: .55; }
-.archive-group[data-revealed="true"] .archive-list::before { transform: scaleY(1); }
+.archive-list::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: linear-gradient(var(--accent), var(--line)); opacity: .55; }
 .archive-item { position: relative; transition: border-color var(--motion-fast), background-color var(--motion-fast); }
-.archive-item::before { content: ""; position: absolute; left: -29px; top: 50%; width: 9px; height: 9px; border: 2px solid var(--bg); border-radius: 50%; background: var(--line); box-shadow: 0 0 0 1px var(--line); transform: translateY(-50%) scale(.7); transition: transform var(--motion-base) var(--motion-ease), background-color var(--motion-base), box-shadow var(--motion-base); }
-.archive-item[data-revealed="true"]::before { background: var(--accent); box-shadow: 0 0 0 4px rgba(var(--accent-rgb), .12); transform: translateY(-50%) scale(1); }
+.archive-item::before { content: ""; position: absolute; left: -29px; top: 50%; width: 9px; height: 9px; border: 2px solid var(--bg); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(var(--accent-rgb), .12); transform: translateY(-50%); }
 .archive-item:hover { background: rgba(var(--accent-rgb), .035); border-color: rgba(var(--accent-rgb), .28); }
 .archive-item:hover a { transform: translateX(3px); color: var(--accent); }
 
@@ -418,13 +396,6 @@ body[data-header-compact="true"] .nav-shell { min-height: 54px; padding-block: 6
   .transition-veil { display: none !important; }
   ::view-transition-old(root),
   ::view-transition-new(root) { animation: none !important; }
-  [data-reveal],
-  .post-card[data-reveal] {
-    opacity: 1 !important;
-    transform: none !important;
-    translate: none !important;
-    transition: none !important;
-  }
   .post-card:hover,
   .post-card:active,
   .text-link:hover,

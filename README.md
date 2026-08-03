@@ -132,7 +132,3 @@ readlink -f /var/www/aier-blog/current
 ln -sfn /var/www/aier-blog/releases/版本目录 /var/www/aier-blog/current
 nginx -t && systemctl reload nginx
 ```
-
-## HTTPS
-
-`blog.reaier.top` 当前等待 ICP 备案。备案通过后再使用 Certbot 申请证书并启用 HTTP 到 HTTPS 跳转。

@@ -6,6 +6,6 @@ const posts = (await getCollection('blog')).filter((post) => !post.data.draft);
 const tags = collectTags(posts);
 ---
 <BaseLayout title="标签" description="按主题浏览 Aier's blogs。">
-  <header class="page-head container" data-reveal style="--reveal-delay: 0ms"><p class="eyebrow">Topics</p><h1 class="page-title">标签</h1><p class="lead">从主题进入，寻找相关的记录与思考。</p></header>
-  <section class="section container" data-reveal style="--reveal-delay: 70ms"><ul class="tag-list">{tags.map((tag, index) => <li data-reveal style={`--reveal-delay: ${Math.min(index * 70, 210)}ms`}><a class="tag" href={`/tags/${encodeURIComponent(tag.name)}/`}>#{tag.name} · {tag.count}</a></li>)}</ul></section>
+  <header class="page-head container"><p class="eyebrow">Topics</p><h1 class="page-title">标签</h1><p class="lead">从主题进入，寻找相关的记录与思考。</p></header>
+  <section class="section container"><ul class="tag-list">{tags.map((tag) => <li><a class="tag" href={`/tags/${encodeURIComponent(tag.name)}/`}>#{tag.name} · {tag.count}</a></li>)}</ul></section>
 </BaseLayout>

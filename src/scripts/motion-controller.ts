@@ -48,21 +48,6 @@ export function initializeMotionPage(): () => void {
   onAbort(signal, headerFrame.cancel);
   updateHeaderDensity();
 
-  const revealTargets = [...document.querySelectorAll<HTMLElement>('[data-reveal]')];
-  if ('IntersectionObserver' in window && revealTargets.length) {
-    const revealObserver = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        (entry.target as HTMLElement).dataset.revealed = 'true';
-        revealObserver.unobserve(entry.target);
-      }
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-    revealTargets.forEach((target) => revealObserver.observe(target));
-    onAbort(signal, () => revealObserver.disconnect());
-  } else {
-    revealTargets.forEach((target) => { target.dataset.revealed = 'true'; });
-  }
-
   const hoverless = matchMedia('(hover: none)');
   if (!hoverless.matches) {
     const motionCards = [...document.querySelectorAll<HTMLElement>('[data-motion-card]')];
