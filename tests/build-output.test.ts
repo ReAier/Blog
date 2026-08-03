@@ -41,4 +41,19 @@ describe('production build output', () => {
     expect(html).toContain('class="katex-display"');
     expect(html).toContain('∫');
   });
+  it('generates a noindex clip page, metadata-only card, and byte-identical raw download', async () => {
+    const page = await readFile(dist('clips/astro-config/index.html'), 'utf8');
+    const article = await readFile(dist('posts/markdown-guide/index.html'), 'utf8');
+    const raw = await readFile(dist('clips/astro-config.txt'), 'utf8');
+    const source = await readFile(new URL('../src/content/clips/astro.config.ts', import.meta.url), 'utf8');
+    const sitemap = await readFile(dist('sitemap-0.xml'), 'utf8');
+
+    expect(page).toContain('name="robots" content="noindex, nofollow"');
+    expect(page).toContain('data-clip-detail');
+    expect(page).toContain('astro.config.ts');
+    expect(article).toContain('data-clip-card');
+    expect(article).not.toContain("filter: (page) => !page.includes('/clips/')");
+    expect(raw).toBe(source);
+    expect(sitemap).not.toContain('/clips/');
+  });
 });

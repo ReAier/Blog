@@ -8,7 +8,7 @@ import SiteFooter from '../components/SiteFooter.astro';
 import CodeEnhancer from '../components/CodeEnhancer.astro';
 import MotionShell from '../components/MotionShell.astro';
 import { resolvePageKind } from '../lib/motion';
-interface Props { title?: string; description?: string; image?: string; article?: boolean; }
+interface Props { title?: string; description?: string; image?: string; article?: boolean; robots?: string; }
 const props = Astro.props;
 const pageKind = props.article ? 'article' : resolvePageKind(Astro.url.pathname);
 ---
@@ -41,5 +41,8 @@ const pageKind = props.article ? 'article' : resolvePageKind(Astro.url.pathname)
     <main id="main-content" class="site-main"><slot /></main>
     <SiteFooter />
     <CodeEnhancer />
+    <script>
+      import '../scripts/clip-copy';
+    </script>
   </body>
 </html>
