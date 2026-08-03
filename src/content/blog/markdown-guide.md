@@ -1,7 +1,8 @@
 ---
 title: "Markdown 写作示例"
-description: "展示标题、列表、引用、代码与表格在博客中的排版效果。"
+description: "展示标题、列表、引用、代码、云剪切板与表格在博客中的排版效果。"
 publishedAt: 2026-07-10
+updatedAt: 2026-08-03
 tags:
   - Markdown
   - 写作
@@ -22,6 +23,36 @@ const site = {
 console.log(site.name);
 ```
 
+## 云剪切板
+
+较长代码可以放在独立的剪切板页面中，正文只展示紧凑的引用卡片。
+
+```clip
+title: Astro 配置示例
+description: 云剪切板的内置示例，用于验证代码详情页、复制与下载功能。
+language: typescript
+file: astro.config.ts
+createdAt: 2026-08-03
+```
+
+## 外部引用卡片
+
+外部资料可以写成紧凑的引用卡片，标题和简介直接保存在 Markdown 中。点击“访问原文”会在新标签页打开目标网页。
+
+```reference
+url: https://docs.astro.build/zh-cn/guides/markdown-content/
+title: Astro：Markdown 与 MDX
+description: Astro 官方的 Markdown 内容与配置指南。
+```
+
+引用站内文章时使用文章的完整线上地址：
+
+```reference
+url: https://blog.reaier.top/posts/welcome/
+title: 欢迎来到 Aier's blogs
+description: 这是博客的第一篇文章，也是一次持续记录的开始。
+```
+
 ## 引用
 
 > 好的工具不会抢走注意力，而是让想法更自然地抵达读者。
@@ -37,7 +68,7 @@ console.log(site.name);
 
 | 能力 | 实现方式 |
 |---|---|
-| 内容 | Markdown / MDX |
+| 内容 | Markdown |
 | 构建 | Astro |
 | 服务 | Nginx |
 | 发布 | SSH 原子部署 |

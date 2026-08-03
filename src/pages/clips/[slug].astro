@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatClipBytes, getAllClips, type ClipRecord } from '../../lib/clips';
+import { highlightClipCode } from '../../lib/clip-highlight';
+
+export function getStaticPaths() {
+  return getAllClips().map((clip) => ({ params: { slug: clip.slug }, props: { clip } }));
+}
+
+interface Props { clip: ClipRecord; }
+const { clip } = Astro.props;
+const highlightedCode = await highlightClipCode(clip.code, clip.language);
+const displayDate = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'long', timeZone: 'UTC' });
+const createdAt = displayDate.format(new Date(`${clip.createdAt}T00:00:00Z`));
+const updatedAt = clip.updatedAt
+  ? displayDate.format(new Date(`${clip.updatedAt}T00:00:00Z`))
+  : undefined;
+---
+<BaseLayout
+  title={clip.title}
+  description={clip.description ?? `${clip.file} · ${clip.language} · ${clip.lineCount} 行`}
+  robots="noindex, nofollow"
+>
+  <article class="clip-detail container" data-clip-detail>
+    <header class="clip-detail__header glass">
+      <div>
+        <p class="eyebrow">Cloud clipboard</p>
+        <h1>{clip.title}</h1>
+        {clip.description && <p class="clip-detail__description">{clip.description}</p>}
+      </div>
+      <dl class="clip-detail__meta">
+        <div><dt>文件</dt><dd>{clip.file}</dd></div>
+        <div><dt>语言</dt><dd>{clip.language}</dd></div>
+        <div><dt>规模</dt><dd>{clip.lineCount} 行 · {formatClipBytes(clip.byteSize)}</dd></div>
+        <div><dt>{updatedAt ? '更新' : '创建'}</dt><dd>{updatedAt ?? createdAt}</dd></div>
+      </dl>
+      <div class="clip-detail__actions">
+        <button class="clip-action clip-action--primary" type="button" data-copy-clip data-raw-url={clip.rawUrl} data-copy-state="idle">复制全部</button>
+        <a class="clip-action" href={clip.rawUrl} download={clip.file}>下载源码</a>
+        <a class="clip-action" href="/posts/" data-clip-back>返回上一页</a>
+        <span class="sr-only" aria-live="polite" data-copy-status></span>
+      </div>
+    </header>
+
+    <div class="clip-code-shell" set:html={highlightedCode}></div>
+  </article>
+</BaseLayout>
+
+<script>
+  import '../../scripts/clip-back';
+</script>

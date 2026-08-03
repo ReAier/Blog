@@ -42,6 +42,28 @@ featured: false
 - `featured`：设为 `true` 时可出现在首页精选区域。
 - `cover`：可选社交分享图片路径。
 
+## 云剪切板
+
+较长代码可以保存到独立的只读代码页，再通过 Markdown 围栏卡片放入文章正文。保存源码、填写围栏元数据和引用卡片的完整步骤见：
+
+```text
+docs/cloud-clipboard.md
+```
+
+## 外部引用卡片
+
+需要推荐或引用外部网页时，可以直接在文章 Markdown 中填写一个 `reference` 围栏：
+
+````markdown
+```reference
+url: https://example.com/article
+title: 示例文章标题
+description: 这是一段可选的文章简介。
+```
+````
+
+`url` 和 `title` 必填，`description` 可选；每个字段独占一行。URL 仅支持绝对的 `http` 或 `https` URL。标题和摘要由作者手动维护，构建过程不会访问目标网站。重复字段、未知字段或格式错误会使检查和构建失败。
+
 ## 检查与构建
 
 ```powershell
