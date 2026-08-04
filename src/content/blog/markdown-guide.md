@@ -1,6 +1,6 @@
 ---
 title: "Markdown 写作示例"
-description: "展示标题、列表、引用、代码、云剪切板与表格在博客中的排版效果。"
+description: "展示标题、列表、引用、代码、云剪切板、提示卡片与表格在博客中的排版效果。"
 publishedAt: 2026-07-10
 updatedAt: 2026-08-03
 tags:
@@ -33,6 +33,20 @@ description: 云剪切板的内置示例，用于验证代码详情页、复制�
 language: typescript
 file: astro.config.ts
 createdAt: 2026-08-03
+```
+
+## 可折叠提示卡片
+
+补充说明可以放进默认折叠的 Callout 中，读者需要时再展开查看。
+
+```callout
+title: 为什么使用原生折叠元素？
+
+原生折叠元素无需额外脚本，并且支持键盘操作。正文仍然可以使用 **Markdown**：
+
+- 添加多段说明
+- 插入[相关链接](https://docs.astro.build/zh-cn/guides/markdown-content/)
+- 展示 `行内代码`
 ```
 
 ## 外部引用卡片

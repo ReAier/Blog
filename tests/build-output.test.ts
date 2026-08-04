@@ -46,6 +46,13 @@ describe('production build output', () => {
     expect(html).toContain('class="katex-display"');
     expect(html).toContain('∫');
   });
+  it('renders the callout example in production HTML', async () => {
+    const article = await readFile(dist('posts/markdown-guide/index.html'), 'utf8');
+    expect(article).toContain('data-callout-card');
+    expect(article).toContain('<details class="callout-card glass"');
+    expect(article).not.toMatch(/<details[^>]*data-callout-card[^>]*\sopen(?:\s|>|=)/);
+  });
+
   it('generates a noindex clip page, metadata-only card, and byte-identical raw download', async () => {
     const page = await readFile(dist('clips/astro-config/index.html'), 'utf8');
     const article = await readFile(dist('posts/markdown-guide/index.html'), 'utf8');
