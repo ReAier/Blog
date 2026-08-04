@@ -46,6 +46,17 @@ describe('cloud clipboard UI contract', () => {
     }
   });
 
+  it('gives light-mode clip and reference cards translucent backdrop glass', async () => {
+    const css = await read('src/styles/global.css');
+
+    expect(css).toContain(':root:not([data-theme="dark"]) .clip-card,');
+    expect(css).toContain(':root:not([data-theme="dark"]) .reference-card {');
+    expect(css).toContain('background: linear-gradient(135deg, rgba(255, 255, 255, .54), rgba(var(--accent-rgb), .09));');
+    expect(css).toContain('backdrop-filter: blur(18px) saturate(135%);');
+    expect(css).toContain('.glass.clip-card,');
+    expect(css).toContain('.glass.reference-card { background: var(--surface-solid); }');
+  });
+
   it('provides a noindex clip detail page and raw text route', async () => {
     const page = await read('src/pages/clips/[slug].astro');
     const rawRoute = await read('src/pages/clips/[slug].txt.ts');

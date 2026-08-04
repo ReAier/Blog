@@ -49,20 +49,48 @@ export function initializeMotionPage(): () => void {
   updateHeaderDensity();
 
   const hoverless = matchMedia('(hover: none)');
-  if (!hoverless.matches) {
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  if (!hoverless.matches && !reducedMotion.matches) {
     const motionCards = [...document.querySelectorAll<HTMLElement>('[data-motion-card]')];
     motionCards.forEach((card) => {
-      card.addEventListener('pointermove', (event) => {
+      let currentX = 50;
+      let currentY = 50;
+      let targetX = 50;
+      let targetY = 50;
+      let pointerFrame = 0;
+
+      const renderPointer = () => {
+        currentX += (targetX - currentX) * 0.16;
+        currentY += (targetY - currentY) * 0.16;
+        const settled = Math.abs(targetX - currentX) < .05 && Math.abs(targetY - currentY) < .05;
+        if (settled) {
+          currentX = targetX;
+          currentY = targetY;
+        }
+        card.style.setProperty('--pointer-x', `${currentX}%`);
+        card.style.setProperty('--pointer-y', `${currentY}%`);
+        pointerFrame = settled ? 0 : requestAnimationFrame(renderPointer);
+      };
+
+      const movePigmentTo = (x: number, y: number) => {
+        targetX = Math.max(0, Math.min(100, x));
+        targetY = Math.max(0, Math.min(100, y));
+        if (!pointerFrame) pointerFrame = requestAnimationFrame(renderPointer);
+      };
+
+      const trackPointer = (event: PointerEvent) => {
         const rect = card.getBoundingClientRect();
         const x = rect.width ? ((event.clientX - rect.left) / rect.width) * 100 : 50;
         const y = rect.height ? ((event.clientY - rect.top) / rect.height) * 100 : 50;
-        card.style.setProperty('--pointer-x', `${Math.max(0, Math.min(100, x))}%`);
-        card.style.setProperty('--pointer-y', `${Math.max(0, Math.min(100, y))}%`);
-      }, { signal });
-      card.addEventListener('pointerleave', () => {
-        card.style.setProperty('--pointer-x', '50%');
-        card.style.setProperty('--pointer-y', '50%');
-      }, { signal });
+        movePigmentTo(x, y);
+      };
+
+      card.addEventListener('pointerenter', trackPointer, { signal });
+      card.addEventListener('pointermove', trackPointer, { signal });
+      card.addEventListener('pointerleave', () => movePigmentTo(50, 50), { signal });
+      onAbort(signal, () => {
+        if (pointerFrame) cancelAnimationFrame(pointerFrame);
+      });
     });
   }
 
