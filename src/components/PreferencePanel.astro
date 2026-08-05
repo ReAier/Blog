@@ -1,4 +1,5 @@
 ---
+import { BACKGROUND_PRESETS, DEFAULT_BACKGROUND } from '../lib/preferences';
 ---
 <div class="preference-wrap">
   <button class="icon-button" type="button" data-preference-trigger aria-label="打开外观设置" aria-expanded="false" aria-controls="preference-panel">◐</button>
@@ -18,10 +19,27 @@
       <button class="accent-choice" type="button" data-accent="amber" aria-label="琥珀" aria-pressed="false" style="--swatch:#D89016"></button>
       <button class="accent-choice" type="button" data-accent="rose" aria-label="玫红" aria-pressed="true" style="--swatch:#C74776"></button>
     </div>
+    <span class="preference-label">背景</span>
+    <div class="background-choice-row" role="group" aria-label="背景图片">
+      {BACKGROUND_PRESETS.map((background) => (
+        <button
+          class="background-choice"
+          type="button"
+          data-background-choice={background.name}
+          aria-label={background.label}
+          aria-pressed={background.name === DEFAULT_BACKGROUND}
+          style={`--background-thumbnail: url('${background.src}')`}
+        >
+        </button>
+      ))}
+    </div>
   </div>
 </div>
 <script>
+  import { BACKGROUND_PRESETS, DEFAULT_BACKGROUND, isBackground } from '../lib/preferences';
+
   const allowedAccents = new Set(['coral', 'teal', 'indigo', 'amber', 'rose']);
+  const allowedBackgrounds = new Set(BACKGROUND_PRESETS.map((background) => background.name));
   let cleanupPreferences = () => {};
 
   function initializePreferences() {
@@ -33,11 +51,16 @@
     const panel = document.querySelector<HTMLElement>('[data-preference-panel]');
     const themeButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-theme-choice]')];
     const accentButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-accent]')];
+    const backgroundButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-background-choice]')];
     const colorScheme = matchMedia('(prefers-color-scheme: dark)');
 
     const notify = () => {
       window.dispatchEvent(new CustomEvent('aier:preference-change', {
-        detail: { theme: root.dataset.theme, accent: root.dataset.accent },
+        detail: {
+          theme: root.dataset.theme,
+          accent: root.dataset.accent,
+          background: root.dataset.background,
+        },
       }));
     };
     const applyTheme = (choice: string, announce = true) => {
@@ -56,6 +79,14 @@
       accentButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.accent === safeAccent)));
       if (announce) notify();
     };
+    const applyBackground = (background: string, announce = true) => {
+      const safeBackground = isBackground(background) && allowedBackgrounds.has(background)
+        ? background
+        : DEFAULT_BACKGROUND;
+      root.dataset.background = safeBackground;
+      backgroundButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.backgroundChoice === safeBackground)));
+      if (announce) notify();
+    };
     const closePanel = (restoreFocus = false) => {
       if (panel) panel.dataset.open = 'false';
       trigger?.setAttribute('aria-expanded', 'false');
@@ -64,6 +95,7 @@
 
     applyTheme(localStorage.getItem('aier-theme') || 'system', false);
     applyAccent(localStorage.getItem('aier-accent-v2') || 'rose', false);
+    applyBackground(localStorage.getItem('aier-background-v1') || DEFAULT_BACKGROUND, false);
     notify();
 
     trigger?.addEventListener('click', () => {
@@ -82,6 +114,12 @@
       const accent = button.dataset.accent || 'rose';
       localStorage.setItem('aier-accent-v2', accent);
       applyAccent(accent);
+    }, { signal }));
+
+    backgroundButtons.forEach((button) => button.addEventListener('click', () => {
+      const background = button.dataset.backgroundChoice || DEFAULT_BACKGROUND;
+      localStorage.setItem('aier-background-v1', background);
+      applyBackground(background);
     }, { signal }));
 
     document.addEventListener('click', (event) => {

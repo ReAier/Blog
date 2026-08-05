@@ -64,7 +64,13 @@ for(int S = 1;S < (1<<n);++ S) {
 
 最终答案就是 $\min_{i=1}^{n} \{dp[2^n-1][i]+w(i,1)\}$。
 
-### [P1171](https://www.luogu.com.cn/problem/P1171)
+```problem
+code: P1171
+title: 售货员的难题
+url: https://www.luogu.com.cn/problem/P1171
+difficulty: green
+categories: 状态压缩，动态规划
+```
 
 ```clip
 title: AC代码
@@ -80,31 +86,81 @@ createdAt: 2026-08-03
 
 这类题不仅关心“选了哪些元素”，还关心最后一个选择的元素，和旅行商问题没有本质区别。
 
-### [CF580D](https://codeforces.com/problemset/problem/580/D)
+```problem
+code: CF580D
+title: Kefa and Dishes
+url: https://codeforces.com/problemset/problem/580/D
+difficulty: green
+categories: 状态压缩，动态规划
+```
 
-### [P3694](https://www.luogu.com.cn/problem/P3694)
+```problem
+code: P3694
+title: 邦邦的大合唱站队
+url: https://www.luogu.com.cn/problem/P3694
+difficulty: cyan
+categories: 状态压缩，动态规划，前缀和
+```
+
+```problem
+code: ABC041D
+title: 徒競走
+url: https://atcoder.jp/contests/abc041/tasks/abc041_d
+difficulty: green
+categories: 状态压缩，动态规划
+```
 
 ## 匹配型状压 DP
 
 典型状态：`dp[S]` = 已经分配了集合 $S$ 中任务时的最优答案当前安排到第几个人，可以通过 $k=\operatorname{popcount}(S)$ 直接计算，不需要多开一维。
 
-### [P4329](https://www.luogu.com.cn/problem/P4329)
+```problem
+code: P4329
+title: Bond
+url: https://www.luogu.com.cn/problem/P4329
+difficulty: green
+categories: 状态压缩，动态规划
+```
 
-### [AT DP O](https://atcoder.jp/contests/dp/tasks/dp_o)
+```problem
+code: AT DP O
+title: Matching
+url: https://atcoder.jp/contests/dp/tasks/dp_o
+difficulty: green
+categories: 状态压缩，动态规划
+```
 
 ## 集合划分 DP
 
-### [AT DP U](https://atcoder.jp/contests/dp/tasks/dp_u)
+```problem
+code: AT DP U
+title: Grouping
+url: https://atcoder.jp/contests/dp/tasks/dp_u
+difficulty: cyan
+categories: 状态压缩，动态规划
+```
 
 ## 棋盘 / 轮廓线 DP
 
 这类题通常用一个二进制数表示某一行的摆放状态：`dp[i][S]` = 处理完前 $i$ 行，当前行状态为 $S$ 的答案。
 
-### [P1896](https://www.luogu.com.cn/problem/P1896)
+```problem
+code: P1896
+title: 互不侵犯
+url: https://www.luogu.com.cn/problem/P1896
+difficulty: cyan
+categories: 状态压缩，动态规划，轮廓线
+```
 
 ## SOS DP
 
-### [CF165E](https://codeforces.com/problemset/problem/165/E)
+```problem
+code: CF165E
+title: Compatible Numbers
+url: https://codeforces.com/problemset/problem/165/E
+difficulty: cyan
+categories: 状态压缩，动态规划
+```
 
 ## 附录
 
@@ -206,7 +262,7 @@ $$
 
 ```cpp
 for (int T = S; T < (1 << n); T = (T + 1) | S) {
-    // S 包含于 T 包含与 full
+    // S 包含于 T 包含于 full
 }
 ```
 

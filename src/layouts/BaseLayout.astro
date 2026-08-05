@@ -8,27 +8,31 @@ import SiteFooter from '../components/SiteFooter.astro';
 import CodeEnhancer from '../components/CodeEnhancer.astro';
 import MotionShell from '../components/MotionShell.astro';
 import { resolvePageKind } from '../lib/motion';
+import { BACKGROUND_PRESETS, DEFAULT_BACKGROUND } from '../lib/preferences';
 interface Props { title?: string; description?: string; image?: string; article?: boolean; robots?: string; }
 const props = Astro.props;
 const pageKind = props.article ? 'article' : resolvePageKind(Astro.url.pathname);
+const backgroundNames = BACKGROUND_PRESETS.map((background) => background.name);
 ---
-<html lang="zh-CN" data-theme="light" data-accent="rose">
+<html lang="zh-CN" data-theme="light" data-accent="rose" data-background="default">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="theme-color" content="#f4f1eb" />
-    <script is:inline>
+    <script is:inline define:vars={{ backgroundNames, defaultBackground: DEFAULT_BACKGROUND }}>
       (() => {
         const allowed = new Set(['coral','teal','indigo','amber','rose']);
         const savedTheme = localStorage.getItem('aier-theme') || 'system';
         const savedAccent = localStorage.getItem('aier-accent-v2') || 'rose';
+        const savedBackground = localStorage.getItem('aier-background-v1') || defaultBackground;
         const theme = savedTheme === 'dark' || savedTheme === 'light'
           ? savedTheme
           : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.dataset.theme = theme;
         document.documentElement.dataset.themeChoice = savedTheme;
         document.documentElement.dataset.accent = allowed.has(savedAccent) ? savedAccent : 'rose';
+        document.documentElement.dataset.background = backgroundNames.includes(savedBackground) ? savedBackground : defaultBackground;
       })();
     </script>
     <SeoHead {...props} />

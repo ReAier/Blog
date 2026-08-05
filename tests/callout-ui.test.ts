@@ -7,7 +7,7 @@ describe('callout card integration', () => {
   it('registers the callout plugin in the Markdown pipeline', async () => {
     const config = await read('astro.config.ts');
     expect(config).toContain("import { remarkCalloutCards } from './src/lib/remark-callout-card'");
-    expect(config).toContain('remarkPlugins: [remarkMath, remarkCalloutCards, remarkClipCards, remarkReferenceCards]');
+    expect(config).toContain('remarkPlugins: [remarkMath, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards]');
   });
 
   it('defines responsive and accessible callout styles', async () => {
@@ -25,6 +25,8 @@ describe('callout card integration', () => {
     }
     expect(css).toMatch(/\.callout-card\s*\{[^}]*min-width:\s*0/);
     expect(css).toMatch(/\.callout-card__content\s*\{[^}]*overflow-wrap:\s*anywhere/);
+    expect(css).toMatch(/\.callout-card:hover[\s\S]*?border-color:\s*rgba\(var\(--accent-rgb\), \.4\)/);
+    expect(css).not.toMatch(/\.callout-card:hover\s*\{[^}]*transform:/);
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.callout-card__chevron[\s\S]*transition:\s*none !important/);
   });
 

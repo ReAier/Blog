@@ -48,6 +48,25 @@ describe('visual shell contract', () => {
     expect(footer).toContain('re.aier@outlook.com');
   });
 
+  it('provides three accessible background choices', async () => {
+    const panel = await read('src/components/PreferencePanel.astro');
+    expect(panel).toContain('aria-label="背景图片"');
+    expect(panel).toContain('data-background-choice={background.name}');
+    expect(panel).toContain('aria-pressed={background.name === DEFAULT_BACKGROUND}');
+    expect(panel).not.toContain('<span>{background.label}</span>');
+  });
+  it('keeps mobile navigation and preferences inside a single viewport-safe interaction layer', async () => {
+    const controller = await read('src/scripts/motion-controller.ts');
+    const css = await read('src/styles/global.css');
+
+    expect(controller).toContain("document.addEventListener('click'");
+    expect(controller).toContain("!nav.contains(target)");
+    expect(controller).toContain("!menuTrigger?.contains(target)");
+    expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*?\.preference-panel\s*\{[^}]*position:\s*fixed/);
+    expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*?\.preference-panel\s*\{[^}]*left:\s*20px[^}]*right:\s*20px/);
+    expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*?\.preference-panel\s*\{[^}]*max-height:\s*calc\(100dvh\s*-\s*102px\)[^}]*overflow-y:\s*auto/);
+  });
+
   it('provides theme controls and all five labeled accent choices', async () => {
     const panel = await read('src/components/PreferencePanel.astro');
     expect(panel).toContain('aria-label="外观设置"');

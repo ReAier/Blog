@@ -4,17 +4,16 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 describe('cloud clipboard UI contract', () => {
-  it('renders Markdown clip references as metadata-only cards with deferred copying', async () => {
+  it('renders Markdown clip references as metadata-only new-tab links', async () => {
     const plugin = await read('src/lib/remark-clip-card.ts');
-    const enhancer = await read('src/scripts/clip-copy.ts');
     expect(plugin).toContain('data-clip-card');
-    expect(plugin).toContain('data-copy-clip');
-    expect(plugin).toContain('clip.rawUrl');
+    expect(plugin).toContain('target="_blank"');
+    expect(plugin).toContain('rel="noopener noreferrer"');
+    expect(plugin).toContain('aria-hidden="true"');
+    expect(plugin).not.toContain('clip-card__actions');
+    expect(plugin).not.toContain('data-copy-clip');
+    expect(plugin).not.toContain('clip.rawUrl');
     expect(plugin).not.toContain('clip.code');
-    expect(enhancer).toContain('fetch(rawUrl)');
-    expect(enhancer).toContain("setState('success'");
-    expect(enhancer).toContain("setState('error'");
-    expect(enhancer).toContain("setState('unsupported'");
   });
 
   it('keeps every blog source file in ordinary Markdown', async () => {
@@ -41,20 +40,36 @@ describe('cloud clipboard UI contract', () => {
 
   it('provides responsive visual primitives for cards and detail pages', async () => {
     const css = await read('src/styles/global.css');
-    for (const token of ['.clip-card', '.clip-card__actions', '.clip-detail', '.clip-code-shell']) {
+    for (const token of ['.clip-card', '.clip-detail', '.clip-detail__actions', '.clip-code-shell']) {
       expect(css).toContain(token);
     }
+    expect(css).not.toContain('.clip-card__actions');
+    expect(css).toMatch(/\.clip-card:hover[\s\S]*?border-color:\s*rgba\(var\(--accent-rgb\), \.4\)/);
+    expect(css).toMatch(/\.clip-card:focus-within[\s\S]*?border-color:\s*rgba\(var\(--accent-rgb\), \.58\)/);
+    expect(css).toMatch(/\.clip-card::after\s*\{[^}]*content:\s*"<\/>"/);
+    expect(css).toMatch(/\.clip-card:hover,\s*\.problem-card:hover\s*\{[^}]*transform:\s*translateY\(-2px\)[^}]*box-shadow:\s*0 24px 64px rgba\(38, 35, 29, \.14\)/);
+    expect(css).toMatch(/:root\[data-theme="dark"\] \.clip-card:hover,\s*:root\[data-theme="dark"\] \.problem-card:hover\s*\{[^}]*box-shadow:\s*0 26px 70px rgba\(0, 0, 0, \.4\)/);
+    expect(css).not.toMatch(/\.clip-card::before\s*\{[^}]*border-radius:\s*50%/);
+  });
+
+  it('uses the article code-block glass material on clip detail pages', async () => {
+    const css = await read('src/styles/global.css');
+    expect(css).toMatch(/\.clip-code-shell\s*\{[^}]*background:\s*var\(--code-surface\)/);
+    expect(css).toMatch(/\.clip-code-shell\s*\{[^}]*-webkit-backdrop-filter:\s*blur\(12px\) saturate\(120%\)/);
+    expect(css).toMatch(/\.clip-code-shell\s*\{[^}]*backdrop-filter:\s*blur\(12px\) saturate\(120%\)/);
+    expect(css).toMatch(/\.clip-code-shell\s*\{[^}]*box-shadow:\s*inset 0 1px rgba\(255, 255, 255, \.05\)/);
+    expect(css).toMatch(/\.clip-code-shell pre\s*\{[^}]*background:\s*transparent !important/);
   });
 
   it('gives light-mode clip and reference cards translucent backdrop glass', async () => {
     const css = await read('src/styles/global.css');
 
     expect(css).toContain(':root:not([data-theme="dark"]) .clip-card,');
-    expect(css).toContain(':root:not([data-theme="dark"]) .reference-card {');
-    expect(css).toContain('background: linear-gradient(135deg, rgba(255, 255, 255, .54), rgba(var(--accent-rgb), .09));');
+    expect(css).toContain(':root:not([data-theme="dark"]) .reference-card,');
+    expect(css).toContain('background: linear-gradient(135deg, rgba(var(--accent-rgb), .07), transparent), var(--embedded-card-surface);');
     expect(css).toContain('backdrop-filter: blur(18px) saturate(135%);');
     expect(css).toContain('.glass.clip-card,');
-    expect(css).toContain('.glass.reference-card { background: var(--surface-solid); }');
+    expect(css).toContain('.glass.reference-card,');
   });
 
   it('provides a noindex clip detail page and raw text route', async () => {
@@ -67,23 +82,19 @@ describe('cloud clipboard UI contract', () => {
     expect(rawRoute).toContain("'Content-Disposition': `attachment; filename=\"");
   });
 
-  it('returns from clip details through browser history with a posts fallback', async () => {
+  it('keeps copy and download actions without a return control', async () => {
     const detail = await read('src/pages/clips/[slug].astro');
-    const backScript = await read('src/scripts/clip-back.ts');
-    expect(detail).toContain('data-clip-back');
-    expect(detail).toContain('href="/posts/"');
-    expect(detail).toContain("import '../../scripts/clip-back'");
-    expect(detail).not.toContain('href="/">返回博客</a>');
-    expect(backScript).toContain('window.history.length > 1');
-    expect(backScript).toContain('window.history.back()');
-    expect(backScript).toContain('event.preventDefault()');
-    expect(backScript).toContain("document.addEventListener('astro:page-load'");
+    expect(detail).toContain('data-copy-clip');
+    expect(detail).toContain('download={clip.file}');
+    expect(detail).not.toContain('data-clip-back');
+    expect(detail).not.toContain('href="/posts/"');
+    expect(detail).not.toContain("import '../../scripts/clip-back'");
   });
 
   it('registers the clip remark plugin and excludes clip pages from the sitemap', async () => {
     const config = await read('astro.config.ts');
     expect(config).toContain('remarkClipCards');
-    expect(config).toContain('remarkPlugins: [remarkMath, remarkCalloutCards, remarkClipCards, remarkReferenceCards]');
+    expect(config).toContain('remarkPlugins: [remarkMath, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards]');
     expect(config).toContain("!page.includes('/clips/')");
   });
 
