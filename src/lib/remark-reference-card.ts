@@ -81,7 +81,6 @@ function renderReferenceCard(fields: ReferenceCardFields): string {
   const description = fields.description
     ? `<p class="reference-card__description">${escapeHtml(fields.description)}</p>`
     : '';
-  const ariaLabel = '访问原文（在新标签页打开）';
 
   return `<aside class="reference-card glass" data-reference-card>
   <div class="reference-card__source">
@@ -90,7 +89,6 @@ function renderReferenceCard(fields: ReferenceCardFields): string {
   </div>
   <h3 class="reference-card__title"><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></h3>
   ${description}
-  <a class="reference-card__action" href="${url}" target="_blank" rel="noopener noreferrer" aria-label="${ariaLabel}">访问原文 <span aria-hidden="true">↗</span></a>
 </aside>`;
 }
 

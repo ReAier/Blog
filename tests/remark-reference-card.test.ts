@@ -27,7 +27,8 @@ description: 一段由文章作者维护的简介。
     expect(html).toMatch(/href="https:\/\/docs\.example\.com\/articles\/card\?mode=full(?:&amp;|&#x26;)lang=zh"/);
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
-    expect(html).toContain('aria-label="访问原文（在新标签页打开）"');
+    expect(html).not.toContain('reference-card__action');
+    expect(html).not.toContain('访问原文');
   });
 
   it('supports a card without a description', async () => {

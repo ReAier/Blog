@@ -143,6 +143,10 @@ export function initializeMotionPage(): () => void {
   nav?.addEventListener('click', (event) => {
     if ((event.target as Element | null)?.closest('a')) closeMenu();
   }, { signal });
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Node ? event.target : null;
+    if (target && nav?.dataset.open === 'true' && !nav.contains(target) && !menuTrigger?.contains(target)) closeMenu();
+  }, { signal });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeMenu();
   }, { signal });

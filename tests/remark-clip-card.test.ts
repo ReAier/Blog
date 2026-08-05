@@ -25,7 +25,12 @@ describe('remark clip cards', () => {
     expect(html).toContain('Astro：配置示例');
     expect(html).toContain('typescript');
     expect(html).toContain('/clips/astro-config/');
-    expect(html).toContain('/clips/astro-config.txt');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).not.toContain('clip-card__actions');
+    expect(html).not.toContain('data-copy-clip');
+    expect(html).not.toContain('/clips/astro-config.txt');
     expect(html).not.toContain("filter: (page) => !page.includes('/clips/')");
   });
 

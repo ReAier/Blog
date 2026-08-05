@@ -37,7 +37,6 @@ const updatedAt = clip.updatedAt
       <div class="clip-detail__actions">
         <button class="clip-action clip-action--primary" type="button" data-copy-clip data-raw-url={clip.rawUrl} data-copy-state="idle">复制全部</button>
         <a class="clip-action" href={clip.rawUrl} download={clip.file}>下载源码</a>
-        <a class="clip-action" href="/posts/" data-clip-back>返回上一页</a>
         <span class="sr-only" aria-live="polite" data-copy-status></span>
       </div>
     </header>
@@ -45,7 +44,3 @@ const updatedAt = clip.updatedAt
     <div class="clip-code-shell" set:html={highlightedCode}></div>
   </article>
 </BaseLayout>
-
-<script>
-  import '../../scripts/clip-back';
-</script>
