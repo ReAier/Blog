@@ -4,12 +4,14 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 describe('mobile page background', () => {
-  it('keeps the page image fixed at mobile widths like the desktop layout', async () => {
+  it('uses the shared viewport-fixed layer instead of fixed background attachment', async () => {
     const css = await read('src/styles/global.css');
-    const mobileStyles = css.slice(css.indexOf('@media (max-width: 560px)'));
+    const shell = await read('src/components/MotionShell.astro');
 
-    expect(css).toContain('background-attachment: fixed;');
-    expect(mobileStyles).toContain('body { background-attachment: fixed; }');
-    expect(mobileStyles).not.toContain('body { background-attachment: scroll; }');
+    expect(shell).toContain('data-page-background');
+    expect(css).toMatch(/\.page-background\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0/s);
+    expect(css).toContain('height: 100lvh;');
+    expect(css).not.toContain('background-attachment: fixed;');
+    expect(css).not.toContain('body { background-attachment: scroll; }');
   });
 });

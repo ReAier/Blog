@@ -287,6 +287,7 @@ export function startFluidBackground(canvas: HTMLCanvasElement): () => void {
   resizeObserver.observe(canvas);
 
   window.addEventListener('pointermove', onPointerMove, { passive: true, signal });
+  window.visualViewport?.addEventListener('resize', resize, { passive: true, signal });
   document.addEventListener('visibilitychange', onVisibilityChange, { signal });
   document.addEventListener('astro:page-load', resync, { signal });
   window.addEventListener('aier:preference-change', resync, { signal });

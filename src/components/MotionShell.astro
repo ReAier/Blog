@@ -11,6 +11,7 @@ const { pageKind } = Astro.props;
   data-page-kind={pageKind}
   transition:persist="motion-shell"
 >
+  <div class="page-background" data-page-background aria-hidden="true"></div>
   <canvas class="fluid-canvas" data-fluid-canvas aria-hidden="true"></canvas>
   <div class="transition-veil" data-transition-veil aria-hidden="true"></div>
   <div class="reading-progress" data-reading-progress aria-hidden="true"><span></span></div>
