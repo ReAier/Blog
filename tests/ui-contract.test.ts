@@ -48,9 +48,9 @@ describe('visual shell contract', () => {
     expect(footer).toContain('re.aier@outlook.com');
   });
 
-  it('provides three accessible background choices', async () => {
+  it('provides accessible image and solid background choices', async () => {
     const panel = await read('src/components/PreferencePanel.astro');
-    expect(panel).toContain('aria-label="背景图片"');
+    expect(panel).toContain('aria-label="背景样式"');
     expect(panel).toContain('data-background-choice={background.name}');
     expect(panel).toContain('aria-pressed={background.name === DEFAULT_BACKGROUND}');
     expect(panel).not.toContain('<span>{background.label}</span>');
