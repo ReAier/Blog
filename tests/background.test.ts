@@ -52,6 +52,7 @@ describe('selectable backgrounds', () => {
     expect(panel).toContain('aier-background-v1');
     expect(panel).toContain('background: root.dataset.background');
     expect(panel).toContain('data-background-kind={background.kind}');
+    expect(panel).toContain('aria-label="背景样式"');
     expect(panel).toContain('--background-thumbnail-light');
     expect(panel).toContain('--background-thumbnail-dark');
     expect(panel).toContain("background.kind === 'image'");
