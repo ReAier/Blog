@@ -39,6 +39,7 @@ const backgroundNames = BACKGROUND_PRESETS.map((background) => background.name);
     <ClientRouter />
   </head>
   <body data-page-kind={pageKind}>
+    <div class="page-background" aria-hidden="true"></div>
     <MotionShell pageKind={pageKind} />
     <a class="skip-link" href="#main-content">跳至正文</a>
     <SiteHeader />

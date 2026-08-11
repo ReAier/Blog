@@ -4,12 +4,18 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 describe('mobile page background', () => {
-  it('keeps the page image fixed at mobile widths like the desktop layout', async () => {
-    const css = await read('src/styles/global.css');
+  it('uses a stable large-viewport layer when mobile browser chrome changes height', async () => {
+    const [layout, css] = await Promise.all([
+      read('src/layouts/BaseLayout.astro'),
+      read('src/styles/global.css'),
+    ]);
     const mobileStyles = css.slice(css.indexOf('@media (max-width: 560px)'));
 
-    expect(css).toContain('background-attachment: fixed;');
-    expect(mobileStyles).toContain('body { background-attachment: fixed; }');
-    expect(mobileStyles).not.toContain('body { background-attachment: scroll; }');
+    expect(layout).toContain('class="page-background"');
+    expect(css).toMatch(/\.page-background\s*\{[^}]*display:\s*none;/);
+    expect(mobileStyles).toMatch(/\.page-background\s*\{[^}]*display:\s*block;[^}]*position:\s*fixed;[^}]*height:\s*100lvh;[^}]*background-image:\s*var\(--backdrop-overlay\),\s*var\(--page-background\);/s);
+    expect(mobileStyles).toMatch(/body\s*\{[^}]*background-image:\s*none;[^}]*background-attachment:\s*scroll;/s);
+    expect(mobileStyles).toMatch(/\.page-background\s*\{[^}]*transform:\s*translate3d\(0,\s*0,\s*0\);[^}]*backface-visibility:\s*hidden;[^}]*will-change:\s*transform;[^}]*contain:\s*paint;/s);
+    expect(mobileStyles).not.toContain('body { background-attachment: fixed; }');
   });
 });

@@ -87,7 +87,8 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: var(--bg); }
-body { margin: 0; min-width: 320px; min-height: 100vh; color: var(--text); background-color: var(--bg); background-image: var(--backdrop-overlay), var(--page-background); background-position: center; background-size: cover; background-attachment: fixed; font-family: var(--sans); font-size: 16px; line-height: 1.75; text-rendering: optimizeLegibility; }
+body { isolation: isolate; margin: 0; min-width: 320px; min-height: 100vh; color: var(--text); background-color: var(--bg); background-image: var(--backdrop-overlay), var(--page-background); background-position: center; background-size: cover; background-attachment: fixed; font-family: var(--sans); font-size: 16px; line-height: 1.75; text-rendering: optimizeLegibility; }
+.page-background { display: none; }
 body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -3; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 46px 46px; mask-image: linear-gradient(to bottom, rgba(0,0,0,.38), transparent 72%); opacity: .28; }
 body::after { content: ""; position: fixed; width: 48vw; height: 48vw; max-width: 700px; max-height: 700px; right: -18vw; top: -22vw; pointer-events: none; z-index: -2; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .10), transparent 68%); filter: blur(18px); }
 ::selection { background: rgba(var(--accent-rgb), .25); }
@@ -237,7 +238,28 @@ button { color: inherit; }
 @media (max-width: 560px) {
   .container, .reading-container { width: min(calc(100% - 28px), var(--content)); }
   .site-main { padding-top: 92px; }
-  body { background-attachment: fixed; }
+  body { background-image: none; background-attachment: scroll; }
+  .page-background {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -4;
+    width: 100%;
+    height: 100vh;
+    height: 100lvh;
+    transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    will-change: transform;
+    contain: paint;
+    pointer-events: none;
+    background-color: var(--bg);
+    background-image: var(--backdrop-overlay), var(--page-background);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
   .site-header { top: 8px; }
   .nav-shell { min-height: 58px; border-radius: 14px; padding-left: 14px; }
   .preference-panel {
