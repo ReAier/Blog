@@ -1,11 +1,30 @@
 import { createMarkdownProcessor } from '@astrojs/markdown-remark';
-import { describe, expect, it } from 'vitest';
+import { access, mkdir, rm, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { remarkClipCards } from '../src/lib/remark-clip-card';
+
+const clipFixture = resolve(process.cwd(), 'src/content/clips/remark-clip-fixture.ts');
+let createdClipFixture = false;
+
+beforeAll(async () => {
+  try {
+    await access(clipFixture);
+  } catch {
+    await mkdir(resolve(process.cwd(), 'src/content/clips'), { recursive: true });
+    await writeFile(clipFixture, 'export default {};\n', 'utf8');
+    createdClipFixture = true;
+  }
+});
+
+afterAll(async () => {
+  if (createdClipFixture) await rm(clipFixture, { force: true });
+});
 
 const completeFence = `title: Astro：配置示例
 description: 云剪切板：围栏元数据示例。
 language: typescript
-file: astro.config.ts
+file: remark-clip-fixture.ts
 createdAt: 2026-08-03`;
 
 async function render(markdown: string) {
@@ -24,13 +43,13 @@ describe('remark clip cards', () => {
     expect(html).toContain('data-clip-card');
     expect(html).toContain('Astro：配置示例');
     expect(html).toContain('typescript');
-    expect(html).toContain('/clips/astro-config/');
+    expect(html).toContain('/clips/remark-clip-fixture/');
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
     expect(html).toContain('aria-hidden="true"');
     expect(html).not.toContain('clip-card__actions');
     expect(html).not.toContain('data-copy-clip');
-    expect(html).not.toContain('/clips/astro-config.txt');
+    expect(html).not.toContain('/clips/remark-clip-fixture.txt');
     expect(html).not.toContain("filter: (page) => !page.includes('/clips/')");
   });
 
@@ -47,7 +66,7 @@ describe('remark clip cards', () => {
     const markdown = completeFence.split('\n').map((line) => `> ${line}`).join('\n');
     const html = await render(`> \`\`\`clip\n${markdown}\n> \`\`\``);
     expect(html).not.toContain('data-clip-card');
-    expect(html).toContain('file: astro.config.ts');
+    expect(html).toContain('file: remark-clip-fixture.ts');
   });
 
   it('leaves ordinary code and reference fences unchanged', async () => {
@@ -60,8 +79,8 @@ describe('remark clip cards', () => {
   });
 
   it.each([
-    ['legacy slug-only syntax', '```clip\nastro-config\n```', 'key: value'],
-    ['missing source', `\`\`\`clip\n${completeFence.replace('astro.config.ts', 'missing.ts')}\n\`\`\``, 'source file does not exist'],
+    ['legacy slug-only syntax', '```clip\nremark-clip-fixture\n```', 'key: value'],
+    ['missing source', `\`\`\`clip\n${completeFence.replace('remark-clip-fixture.ts', 'missing.ts')}\n\`\`\``, 'source file does not exist'],
     ['explicit slug', `\`\`\`clip\nslug: manual-slug\n${completeFence}\n\`\`\``, 'Unknown clip field "slug"'],
     ['unknown field', `\`\`\`clip\n${completeFence}\nauthor: Aier\n\`\`\``, 'Unknown clip field'],
   ])('rejects %s', async (_label, markdown, message) => {
