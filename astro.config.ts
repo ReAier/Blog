@@ -6,6 +6,7 @@ import remarkMath from 'remark-math';
 import { remarkCalloutCards } from './src/lib/remark-callout-card';
 import { remarkClipCards } from './src/lib/remark-clip-card';
 import { remarkReferenceCards } from './src/lib/remark-reference-card';
+import { remarkProblemCards } from './src/lib/remark-problem-card';
 
 export default defineConfig({
   site: 'https://blog.reaier.top',
@@ -14,7 +15,7 @@ export default defineConfig({
   markdown: {
     processor: unified({
       smartypants: false,
-      remarkPlugins: [remarkMath, remarkCalloutCards, remarkClipCards, remarkReferenceCards],
+      remarkPlugins: [remarkMath, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards],
       rehypePlugins: [rehypeKatex],
     }),
   },

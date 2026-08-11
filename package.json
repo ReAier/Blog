@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --force",
     "check": "astro check",
     "test": "vitest",
     "build": "astro check && astro build",

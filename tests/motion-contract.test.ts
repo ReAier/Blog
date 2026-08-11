@@ -211,9 +211,15 @@ describe('motion safety and accessibility', () => {
   });
 
 
-  it('covers the full article card with the pointer gradient', async () => {
+  it('animates the full card pigment layer into a pointer-centered pool', async () => {
     const css = await read('src/styles/global.css');
-    expect(css).toContain('ellipse 125% 150%');
+    expect(css).toContain('var(--post-card-pigment-radius-rest)');
+    expect(css).toContain('var(--post-card-pigment-radius-hover)');
+    expect(css).toContain('mask-image: radial-gradient(');
+    expect(css).toContain('rgba(0, 0, 0, .28)');
+    expect(css).not.toContain('clip-path: circle(');
+    expect(css).toContain('var(--post-card-pigment-soft)');
+    expect(css).toContain('var(--post-card-neutral)');
     expect(css).not.toContain('width: 210px;');
     expect(css).not.toContain('translate(-35px, 35px)');
   });

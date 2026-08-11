@@ -28,13 +28,8 @@ function renderClipCard(clip: ClipRecord): string {
     <span>${clip.lineCount} 行</span>
     <span>${formatClipBytes(clip.byteSize)}</span>
   </div>
-  <h3><a href="${clip.pageUrl}">${title}</a></h3>
+  <h3><a href="${clip.pageUrl}" target="_blank" rel="noopener noreferrer">${title} <span aria-hidden="true">↗</span></a></h3>
   ${description}
-  <div class="clip-card__actions">
-    <a class="clip-action clip-action--primary" href="${clip.pageUrl}">查看完整代码</a>
-    <button class="clip-action" type="button" data-copy-clip data-raw-url="${clip.rawUrl}" data-copy-state="idle" aria-label="复制代码">复制代码</button>
-    <span class="sr-only" aria-live="polite" data-copy-status></span>
-  </div>
 </aside>`;
 }
 
