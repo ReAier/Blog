@@ -47,6 +47,11 @@
 :root[data-background='default'] { --page-background: url('/site-background.webp'); }
 :root[data-background='background-2'] { --page-background: url('/site-background-2.webp'); }
 :root[data-background='background-3'] { --page-background: url('/site-background-3.webp'); }
+:root[data-background='warm-rice'] { --page-background: linear-gradient(#EEE8DC, #EEE8DC); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-background='mist-gray'] { --page-background: linear-gradient(#E4E6E5, #E4E6E5); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-background='sage'] { --page-background: linear-gradient(#DDE5D8, #DDE5D8); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-background='morning-blue'] { --page-background: linear-gradient(#DCE5E9, #DCE5E9); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-background='lotus-pink'] { --page-background: linear-gradient(#E8DDE0, #E8DDE0); --backdrop-overlay: linear-gradient(transparent, transparent); }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -71,6 +76,12 @@
   --code-surface: rgba(18, 20, 22, .66);
   --code-surface-fallback: #1b1e21;
 }
+
+:root[data-theme="dark"][data-background='warm-rice'] { --page-background: linear-gradient(#24211C, #24211C); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-theme="dark"][data-background='mist-gray'] { --page-background: linear-gradient(#202322, #202322); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-theme="dark"][data-background='sage'] { --page-background: linear-gradient(#1E261F, #1E261F); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-theme="dark"][data-background='morning-blue'] { --page-background: linear-gradient(#1D2428, #1D2428); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-theme="dark"][data-background='lotus-pink'] { --page-background: linear-gradient(#282024, #282024); --backdrop-overlay: linear-gradient(transparent, transparent); }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: var(--bg); }
