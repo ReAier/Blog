@@ -28,9 +28,15 @@ describe('selectable photographic backgrounds', () => {
   it('restores and persists a versioned background preference', async () => {
     const layout = await readFile(new URL('src/layouts/BaseLayout.astro', root), 'utf8');
     const panel = await readFile(new URL('src/components/PreferencePanel.astro', root), 'utf8');
+    const css = await readFile(new URL('src/styles/global.css', root), 'utf8');
     expect(layout).toContain('data-background="default"');
     expect(layout).toContain('aier-background-v1');
     expect(panel).toContain('aier-background-v1');
     expect(panel).toContain('background: root.dataset.background');
-  });
+    expect(panel).toContain('data-background-kind={background.kind}');
+    expect(panel).toContain('--background-thumbnail-light');
+    expect(panel).toContain('--background-thumbnail-dark');
+    expect(panel).toContain("background.kind === 'image'");
+    expect(css).toContain(':root[data-theme="dark"] .background-choice');
+    expect(css).toContain('--background-thumbnail: var(--background-thumbnail-dark)');  });
 });

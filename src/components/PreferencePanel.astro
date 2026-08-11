@@ -26,9 +26,13 @@ import { BACKGROUND_PRESETS, DEFAULT_BACKGROUND } from '../lib/preferences';
           class="background-choice"
           type="button"
           data-background-choice={background.name}
+          data-background-kind={background.kind}
           aria-label={background.label}
           aria-pressed={background.name === DEFAULT_BACKGROUND}
-          style={`--background-thumbnail: url('${background.src}')`}
+          style={background.kind === 'image'
+            ? `--background-thumbnail-light: url('${background.src}'); --background-thumbnail-dark: url('${background.src}')`
+            : `--background-thumbnail-light: linear-gradient(${background.lightColor}, ${background.lightColor}); --background-thumbnail-dark: linear-gradient(${background.darkColor}, ${background.darkColor})`
+          }
         >
         </button>
       ))}
