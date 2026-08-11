@@ -1,4 +1,6 @@
 import { createMarkdownProcessor } from '@astrojs/markdown-remark';
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
 import { describe, expect, it } from 'vitest';
 import { remarkCalloutCards } from '../src/lib/remark-callout-card';
 
@@ -6,7 +8,8 @@ async function render(markdown: string) {
   const processor = await createMarkdownProcessor({
     syntaxHighlight: false,
     smartypants: false,
-    remarkPlugins: [remarkCalloutCards],
+    remarkPlugins: [remarkMath, remarkCalloutCards],
+    rehypePlugins: [rehypeKatex],
   });
   return (await processor.render(markdown)).code;
 }
@@ -24,6 +27,7 @@ title: 为什么需要这样配置？
 
     expect(html).toMatch(/<details class="callout-card glass" data-callout-card(?:="")?>/);
     expect(html).toContain('<summary class="callout-card__summary">');
+    expect(html).toContain('<span class="callout-card__chevron" aria-hidden="true"></span>');
     expect(html).toContain('为什么需要这样配置？');
     expect(html).toContain('<div class="callout-card__content">');
     expect(html).toContain('<strong>重点</strong>');
@@ -31,6 +35,29 @@ title: 为什么需要这样配置？
     expect(html).toContain('<code>inlineCode</code>');
     expect(html).toContain('<li>第一项</li>');
     expect(html).not.toMatch(/<details[^>]*\sopen(?:\s|>|=)/);
+  });
+
+  it('renders inline math in the callout title', async () => {
+    const command = String.fromCharCode(92) + 'max';
+    const html = await render('```callout\ntitle: Why $' + command + '$?\n\nBody text.\n```');
+
+    expect(html).toContain('katex');
+    expect(html).not.toContain('$' + command + '$');
+  });
+
+  it('renders inline math inside a collapsed callout', async () => {
+    const command = String.fromCharCode(92) + 'max';
+    const html = await render('```callout\ntitle: Formula\n\nThe answer is $' + command + '$.\n```');
+
+    expect(html).toContain('katex');
+    expect(html).not.toContain('$' + command + '$');
+  });
+
+  it('renders display math inside a collapsed callout', async () => {
+    const html = await render('```callout\ntitle: Formula\n\n$$\nx^2 + y^2 = z^2\n$$\n```');
+
+    expect(html).toContain('katex-display');
+    expect(html).toContain('x^2 + y^2 = z^2');
   });
 
   it('renders fenced code inside the callout body', async () => {
@@ -76,3 +103,4 @@ title: <script>alert("x")</script>
     await expect(render(markdown)).rejects.toThrow(message);
   });
 });
+

@@ -1,4 +1,4 @@
-import { access, readFile, readdir } from 'node:fs/promises';
+﻿import { access, readFile, readdir } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 
 const dist = (path: string) => new URL(`../dist/${path}`, import.meta.url);
@@ -28,6 +28,14 @@ describe('production build output', () => {
     await expect(access(dist(file))).resolves.toBeUndefined();
   });
 
+
+  it('forces Astro to rebuild the content cache for production builds', async () => {
+    const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')) as {
+      scripts?: Record<string, string>;
+    };
+
+    expect(packageJson.scripts?.build).toContain('astro build --force');
+  });
   it('adds canonical metadata to the home page', async () => {
     const html = await readFile(dist('index.html'), 'utf8');
     expect(html).toContain('rel="canonical"');

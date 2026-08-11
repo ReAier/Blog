@@ -1,4 +1,6 @@
 import { fromMarkdown } from 'mdast-util-from-markdown';
+import { mathFromMarkdown } from 'mdast-util-math';
+import { math } from 'micromark-extension-math';
 
 interface MarkdownNode {
   type: string;
@@ -10,15 +12,6 @@ interface MarkdownNode {
 interface CalloutDefinition {
   title: string;
   body: string;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
 }
 
 function parseCalloutDefinition(value: string): CalloutDefinition {
@@ -42,8 +35,31 @@ function parseCalloutDefinition(value: string): CalloutDefinition {
   return { title, body };
 }
 
+function parseMarkdown(value: string): MarkdownNode {
+  return fromMarkdown(value, {
+    extensions: [math()],
+    mdastExtensions: [mathFromMarkdown()],
+  }) as MarkdownNode;
+}
+
+function parseCalloutTitle(value: string): MarkdownNode[] {
+  const parsed = parseMarkdown(value);
+  const titleChildren = (parsed.children ?? []).flatMap((child) =>
+    child.type === 'paragraph' ? child.children ?? [] : [child],
+  );
+
+  return titleChildren.map((child) => {
+    if (child.type === 'html') {
+      return { type: 'text', value: child.value ?? '' };
+    }
+
+    return child;
+  });
+}
+
 function renderCalloutNodes(definition: CalloutDefinition): MarkdownNode[] {
-  const parsedBody = fromMarkdown(definition.body) as MarkdownNode;
+  const parsedTitle = parseCalloutTitle(definition.title);
+  const parsedBody = parseMarkdown(definition.body);
   transformNode(parsedBody);
 
   return [
@@ -52,10 +68,12 @@ function renderCalloutNodes(definition: CalloutDefinition): MarkdownNode[] {
       value: `<details class="callout-card glass" data-callout-card>
   <summary class="callout-card__summary">
     <span class="callout-card__icon" aria-hidden="true">!</span>
-    <span class="callout-card__title">${escapeHtml(definition.title)}</span>
-    <span class="callout-card__chevron" aria-hidden="true"></span>
-  </summary>
-  <div class="callout-card__content">`,
+    <span class="callout-card__title">`,
+    },
+    ...parsedTitle,
+    {
+      type: 'html',
+      value: '</span><span class="callout-card__chevron" aria-hidden="true"></span></summary>\n  <div class="callout-card__content">',
     },
     ...(parsedBody.children ?? []),
     {
