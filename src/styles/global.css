@@ -173,12 +173,10 @@ button { color: inherit; }
 :root[data-theme="light"] .astro-code,
 :root[data-theme="light"] .astro-code span {
   color: var(--shiki-light);
-  background-color: var(--shiki-light-bg, transparent);
 }
 :root[data-theme="dark"] .astro-code,
 :root[data-theme="dark"] .astro-code span {
   color: var(--shiki-dark);
-  background-color: var(--shiki-dark-bg, transparent);
 }
 .prose code { font-family: var(--mono); }
 .prose :not(pre) > code { border-radius: 5px; padding: .15em .38em; background: var(--surface-muted); color: var(--accent); }

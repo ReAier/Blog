@@ -26,6 +26,7 @@ describe('theme contrast', () => {
     expect(css).toContain('color: var(--shiki-light)');
     expect(css).toContain(':root[data-theme="dark"] .astro-code');
     expect(css).toContain('color: var(--shiki-dark)');
+    expect(css).not.toMatch(/\.astro-code span\s*\{[^}]*background-color:\s*var\(--shiki-/s);
   });
 
   it('builds dual-theme token variables for articles and clip pages', async () => {
