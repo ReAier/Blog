@@ -16,3 +16,6 @@ src/content/clips/**
 !src/content/clips/.gitkeep
 src/content/images/**
 !src/content/images/.gitkeep
+
+# Local isolated feature workspaces
+.worktrees/
