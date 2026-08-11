@@ -33,6 +33,17 @@ npm run preview
 
 `dist/` 是可删除、可重新生成的产物，不应手工修改或提交。
 
+## 私有内容准备
+
+Git 仓库只包含 `src/content/` 的空目录占位符。任何需要部署完整博客的机器都必须在构建前，从独立备份恢复以下本地内容：
+
+```text
+src/content/blog/
+src/content/clips/
+src/content/images/
+```
+
+恢复后先运行 `npm run check`，确认文章 schema、clip 引用和图片路径完整。不要把私有内容包放入 `.deploy/` 的发布归档之外，也不要通过强制添加绕过 `.gitignore`。
 ## 当前生产部署
 
 当前生产方案由 `scripts/deploy.ps1` 实现：

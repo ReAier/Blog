@@ -54,7 +54,7 @@ describe('problem card integration', () => {
   });
 
   it('documents the problem fence and all supported difficulties', async () => {
-    const guide = await read('src/content/blog/markdown-guide.md');
+    const guide = await read('docs/content-authoring.md');
     expect(guide).toContain('```problem');
     expect(guide).toMatch(/```problem[\s\S]*?title:\s*\S+[\s\S]*?url:\s*https?:\/\/\S+[\s\S]*?difficulty:\s*\S+[\s\S]*?categories:\s*\S+[\s\S]*?```/);
     for (const difficulty of ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple', 'black']) {

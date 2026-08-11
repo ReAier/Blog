@@ -125,6 +125,9 @@ Astro 客户端路由会替换页面内容，因此页面级脚本通常监听 `
 
 修改视觉时先复用现有变量和类命名，避免在组件内创建重复设计令牌。
 
+## 私有内容边界
+
+Git 只保留 `src/content/blog/`、`clips/` 和 `images/` 下的 `.gitkeep`。实际内容由本地私有备份提供，Astro 仍按原路径读取；干净克隆因此会生成不含文章和 clip 的空内容站点。应用配置 `src/content.config.ts`、解析器和页面代码继续由 Git 跟踪。
 ## 内容生成链路
 
 1. Astro 使用 `src/content.config.ts` 扫描并校验 Markdown。

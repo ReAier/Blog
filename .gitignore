@@ -9,3 +9,10 @@ dist/
 
 .dev.*
 .homepage.png
+# Authored blog content is local-only. Keep directory placeholders in Git.
+src/content/blog/**
+!src/content/blog/.gitkeep
+src/content/clips/**
+!src/content/clips/.gitkeep
+src/content/images/**
+!src/content/images/.gitkeep

@@ -12,6 +12,9 @@
 - 保持内容 schema、实现、测试和文档一致。
 - 不将凭据、部署信息或生成产物提交到仓库。
 
+## 私有内容边界
+
+Git 只跟踪 `src/content/blog/.gitkeep`、`src/content/clips/.gitkeep` 和 `src/content/images/.gitkeep`。文章、clip 和文章图片属于本地数据：修改前确认备份，提交前使用 `git ls-files src/content` 检查没有实际内容被重新纳入索引。测试不得依赖固定的私人文章文件名；生产产物测试只对当前本地实际生成的文章和 clip 执行通用契约检查。
 ## 开始修改前
 
 1. 阅读根目录 `AGENTS.md` 和相关专题文档。

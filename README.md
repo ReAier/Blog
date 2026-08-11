@@ -56,6 +56,21 @@ npm run dev
 
 生产输出位于 `dist/`。该目录以及 `.astro/`、`.deploy/` 都是生成内容，不应直接编辑或提交。
 
+## 内容存储策略
+
+`src/content/` 的目录骨架由 Git 保留，但文章、代码剪切板和文章图片的内容仅保存在本机，不进入后续 Git 提交：
+
+```text
+src/content/
+├── blog/.gitkeep
+├── clips/.gitkeep
+└── images/.gitkeep
+```
+
+实际文件分别放入 `src/content/blog/`、`src/content/clips/` 和 `src/content/images/`。`.gitignore` 会忽略这些目录中除 `.gitkeep` 外的所有文件。 Git 仅跟踪 `src/content/blog/.gitkeep`、`src/content/clips/.gitkeep` 和 `src/content/images/.gitkeep`。
+
+从干净仓库克隆后得到的是空内容目录；要构建完整站点，需要另外准备私有内容备份并复制到 `src/content/`。停止跟踪只影响后续提交，旧 Git 历史中仍可能包含曾经提交过的文章，因此这不是敏感信息清除方案。
+
 ## 创建第一篇文章
 
 在 `src/content/blog/` 新建 Markdown 文件，例如 `my-first-post.md`：
@@ -121,8 +136,8 @@ description: 可选摘要。
 ├── scripts/                # 部署脚本
 ├── src/
 │   ├── components/         # Astro UI 组件
-│   ├── content/blog/       # Markdown 文章
-│   ├── content/clips/      # 云剪切板源码
+│   ├── content/blog/       # 本地 Markdown 文章（Git 仅保留 .gitkeep）
+│   ├── content/clips/      # 本地云剪切板源码（Git 仅保留 .gitkeep）
 │   ├── layouts/            # 页面与文章布局
 │   ├── lib/                # 内容、Markdown、动效等共享逻辑
 │   ├── pages/              # 文件路由与静态端点

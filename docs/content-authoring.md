@@ -1,6 +1,7 @@
 # 内容创作指南
 
 本文说明如何新建、预览和发布博客文章，以及如何使用项目提供的 Markdown 扩展。项目安装与命令入口见[项目 README](../README.md)。
+> `src/content/` 的内容仅保存在本机，Git 只跟踪 `blog/.gitkeep`、`clips/.gitkeep` 和 `images/.gitkeep`。请自行备份文章、源码和图片；其他机器部署完整站点前，需要先恢复私有内容包。
 
 ## 文章位置与 URL
 
@@ -144,7 +145,7 @@ description: 一段由作者维护的可选摘要。
 - 字段不可重复，字段值不可为空。
 - URL 必须是绝对的 `http` 或 `https` 地址。
 - 标题和摘要由作者手动维护；构建过程不会访问目标网站抓取元数据。
-- 输出链接会在新标签页打开，并带有 `noopener noreferrer`。
+- 点击标题会在新标签页打开目标网页，并带有 `noopener noreferrer`。
 
 未知字段、重复字段、相对 URL 或其他协议会使构建失败。
 
@@ -172,9 +173,25 @@ updatedAt: 2026-08-11
 
 源码保存、slug 派生、日期约束、重复检测、安全边界和更新流程见[云剪切板使用说明](cloud-clipboard.md)。不要把密码、API Key、Token、私钥、Cookie 或隐私数据放入 clip。
 
+## 题目卡片
+
+算法题引用使用 `problem` 围栏：
+
+````markdown
+```problem
+code: P1171
+title: 售货员的难题
+url: https://www.luogu.com.cn/problem/P1171
+difficulty: green
+categories: 状态压缩，动态规划
+```
+````
+
+`code`、`title`、`url`、`difficulty`、`categories` 均为必填字段。URL 必须是绝对的 `http` 或 `https` 地址；分类可使用中文或英文逗号分隔并自动去重。难度仅支持 `red`、`orange`、`yellow`、`green`、`cyan`、`blue`、`purple`、`black`。点击题目标题会在新标签页打开目标网页。
+
 ## 图片与静态资源
 
-不需要构建处理的静态文件放入 `public/`，并使用以 `/` 开头的站点路径引用：
+与文章正文一起管理的图片放入 `src/content/images/`，内容仅保存在本机。无需构建处理且应公开跟踪的站点静态文件放入 `public/`，并使用以 `/` 开头的站点路径引用：
 
 ```markdown
 ![示例图片](/images/example.webp)

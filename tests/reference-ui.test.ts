@@ -31,7 +31,7 @@ describe('reference card integration', () => {
 
   it('documents the public markdown format and validation rules', async () => {
     const readme = await read('README.md');
-    const guide = await read('src/content/blog/markdown-guide.md');
+    const guide = await read('docs/content-authoring.md');
     expect(readme).toContain('```reference');
     expect(readme).toContain('仅支持绝对的 `http` 或 `https` URL');
     expect(guide).toContain('```reference');

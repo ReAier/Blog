@@ -1,4 +1,4 @@
-import { access, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 
 const root = new URL('../', import.meta.url);
@@ -11,9 +11,9 @@ describe('article images', () => {
     expect(css).toContain('box-shadow: var(--shadow);');
   });
 
-  it('references a real local content image', async () => {
-    const guide = await readFile(new URL('src/content/blog/markdown-guide.md', root), 'utf8');
-    await expect(access(new URL('src/content/images/markdown-guide/build-result.webp', root))).resolves.toBeUndefined();
-    expect(guide).toContain('![展示 Astro 构建结果](../images/markdown-guide/build-result.webp)');
+  it('documents local article image paths without requiring a tracked asset', async () => {
+    const guide = await readFile(new URL('docs/content-authoring.md', root), 'utf8');
+    expect(guide).toContain('src/content/images/');
+    expect(guide).toContain('内容仅保存在本机');
   });
 });

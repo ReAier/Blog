@@ -32,7 +32,7 @@ describe('callout card integration', () => {
 
   it('documents the public Markdown format and validation rules', async () => {
     const readme = await read('README.md');
-    const guide = await read('src/content/blog/markdown-guide.md');
+    const guide = await read('docs/content-authoring.md');
     expect(readme).toContain('```callout');
     expect(readme).toContain('`title` 和正文均为必填');
     expect(readme).toContain('默认折叠');

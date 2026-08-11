@@ -18,20 +18,18 @@ describe('cloud clipboard UI contract', () => {
 
   it('keeps every blog source file in ordinary Markdown', async () => {
     const contentConfig = await read('src/content.config.ts');
-    const guide = await read('src/content/blog/markdown-guide.md');
+    const guide = await read('docs/content-authoring.md');
     const config = await read('astro.config.ts');
     const packageJson = await read('package.json');
-    const sample = await read('src/content/clips/astro.config.ts');
     const docs = await read('docs/cloud-clipboard.md');
 
     expect(contentConfig).toContain("pattern: '**/*.md'");
-    expect(guide.replace(/\r\n/g, '\n')).toContain('```clip\ntitle: Astro 配置示例');
+    expect(guide.replace(/\r\n/g, '\n')).toContain('```clip\ntitle: OAuth 回调处理');
     expect(guide).not.toContain('slug: astro-config');
     expect(guide).not.toContain('ClipCard');
     expect(guide).not.toContain('Markdown / MDX');
     expect(config).not.toContain('@astrojs/mdx');
     expect(packageJson).not.toContain('@astrojs/mdx');
-    expect(sample).not.toContain('@astrojs/mdx');
     expect(docs).not.toContain('.mdx');
     expect(docs).not.toContain('<ClipCard');
     expect(docs).toContain('剪切板元数据直接写在');
