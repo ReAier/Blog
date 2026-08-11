@@ -1,7 +1,9 @@
-﻿import { createMarkdownProcessor } from '@astrojs/markdown-remark';
+import { createMarkdownProcessor } from '@astrojs/markdown-remark';
+import { SHIKI_CONFIG } from './syntax-highlighting';
 
 const processor = createMarkdownProcessor({
   syntaxHighlight: 'shiki',
+  shikiConfig: SHIKI_CONFIG,
   smartypants: false,
 });
 

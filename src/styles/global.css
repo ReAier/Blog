@@ -36,6 +36,7 @@
   --embedded-card-surface: rgba(255, 254, 250, .62);
   --code-surface: rgba(255, 254, 250, .62);
   --code-surface-fallback: #f3f0ea;
+  --card-watermark-opacity: .15;
 }
 
 :root[data-accent="coral"] { --accent: #f05a3c; --accent-rgb: 240, 90, 60; }
@@ -75,6 +76,7 @@
   --embedded-card-surface: rgba(20, 22, 24, .62);
   --code-surface: rgba(18, 20, 22, .66);
   --code-surface-fallback: #1b1e21;
+  --card-watermark-opacity: .09;
 }
 
 :root[data-theme="dark"][data-background='warm-rice'] { --page-background: linear-gradient(#24211C, #24211C); --backdrop-overlay: linear-gradient(transparent, transparent); }
@@ -167,6 +169,16 @@ button { color: inherit; }
   -webkit-backdrop-filter: blur(12px) saturate(120%);
   backdrop-filter: blur(12px) saturate(120%);
   font-size: .88rem;
+}
+:root[data-theme="light"] .astro-code,
+:root[data-theme="light"] .astro-code span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg, transparent);
+}
+:root[data-theme="dark"] .astro-code,
+:root[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg, transparent);
 }
 .prose code { font-family: var(--mono); }
 .prose :not(pre) > code { border-radius: 5px; padding: .15em .38em; background: var(--surface-muted); color: var(--accent); }
@@ -567,7 +579,8 @@ body[data-header-compact="true"] .nav-shell { min-height: 54px; padding-block: 6
   z-index: -1;
   right: clamp(18px, 3vw, 34px);
   top: 50%;
-  color: rgba(var(--accent-rgb), .075);
+  color: rgb(var(--accent-rgb));
+  opacity: var(--card-watermark-opacity);
   font-family: var(--mono);
   font-size: clamp(4rem, 11vw, 7rem);
   font-weight: 800;
@@ -700,7 +713,8 @@ body[data-header-compact="true"] .nav-shell { min-height: 54px; padding-block: 6
   z-index: -1;
   right: 18px;
   top: 2px;
-  color: rgba(var(--accent-rgb), .08);
+  color: rgb(var(--accent-rgb));
+  opacity: var(--card-watermark-opacity);
   font-family: var(--mono);
   font-size: clamp(5rem, 16vw, 8rem);
   font-weight: 800;
@@ -876,7 +890,7 @@ body[data-header-compact="true"] .nav-shell { min-height: 54px; padding-block: 6
   font-weight: 800;
   line-height: .82;
   letter-spacing: -.08em;
-  opacity: .075;
+  opacity: var(--card-watermark-opacity);
   pointer-events: none;
   transform: translateY(-50%);
   user-select: none;
@@ -887,9 +901,11 @@ body[data-header-compact="true"] .nav-shell { min-height: 54px; padding-block: 6
 :root[data-theme="dark"] .problem-card:hover { box-shadow: 0 26px 70px rgba(0, 0, 0, .4); }
 
 @media (max-width: 560px) {
+  :root { --card-watermark-opacity: .13; }
+  :root[data-theme="dark"] { --card-watermark-opacity: .075; }
   .problem-card { padding: 17px 18px; border-radius: 18px; }
   .problem-card__title { margin-top: 9px; }
-  .problem-card__watermark { right: 14px; font-size: clamp(3.2rem, 20vw, 5rem); opacity: .055; }
+  .problem-card__watermark { right: 14px; font-size: clamp(3.2rem, 20vw, 5rem); }
 }
 
 /* Collapsible callout cards */

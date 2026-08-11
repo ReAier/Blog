@@ -34,7 +34,7 @@ describe('problem card integration', () => {
     expect(css).toMatch(/\.problem-card__platform\s*\{[^}]*font-family:\s*var\(--mono\)/);
     expect(css).not.toContain('.problem-card__code');
     expect(css).not.toContain('.problem-card__meta');
-    expect(css).toMatch(/\.problem-card__watermark\s*\{[^}]*position:\s*absolute[^}]*right:[^}]*font-family:\s*var\(--mono\)[^}]*font-size:\s*clamp\(4rem, 11vw, 7rem\)[^}]*opacity:\s*\.075/);
+    expect(css).toMatch(/\.problem-card__watermark\s*\{[^}]*position:\s*absolute[^}]*right:[^}]*font-family:\s*var\(--mono\)[^}]*font-size:\s*clamp\(4rem, 11vw, 7rem\)[^}]*opacity:\s*var\(--card-watermark-opacity\)/);
     expect(css).toMatch(/\.prose \.problem-card__categories,[\s\S]*?margin:\s*8px 0 0/);
     expect(css).toMatch(/\.prose \.problem-card__title,[\s\S]*?margin:\s*10px 0 0[^}]*font-size:\s*clamp\(1\.3rem, 2\.8vw, 1\.65rem\)/);
     expect(css).toMatch(/\.problem-card__title-link:hover\s*\{[^}]*color:\s*var\(--accent\)/);
