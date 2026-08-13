@@ -24,15 +24,28 @@ describe('sortPostsNewestFirst', () => {
 });
 
 describe('collectTags', () => {
-  it('deduplicates tags case-insensitively while preserving the first label', () => {
+  it('counts identical labels and sorts the result without mutating posts', () => {
     const posts = [
       { data: { tags: ['AI', '建站'] } },
-      { data: { tags: ['ai', 'Astro'] } },
+      { data: { tags: ['AI', 'Astro'] } },
     ];
+
     expect(collectTags(posts)).toEqual([
       { name: 'AI', count: 2 },
       { name: 'Astro', count: 1 },
       { name: '建站', count: 1 },
     ]);
+    expect(posts[0].data.tags).toEqual(['AI', '建站']);
+  });
+
+  it('rejects labels that differ only by case', () => {
+    const posts = [
+      { data: { tags: ['AI'] } },
+      { data: { tags: ['ai'] } },
+    ];
+
+    expect(() => collectTags(posts)).toThrow(
+      'Conflicting tag labels: "AI" and "ai". Use one spelling consistently.',
+    );
   });
 });

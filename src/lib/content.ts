@@ -19,8 +19,16 @@ export function collectTags(posts: readonly TaggedPost[]): Array<{ name: string;
     for (const tag of post.data.tags) {
       const key = tag.toLocaleLowerCase('zh-CN');
       const current = tags.get(key);
-      if (current) current.count += 1;
-      else tags.set(key, { name: tag, count: 1 });
+      if (current) {
+        if (current.name !== tag) {
+          throw new Error(
+            `Conflicting tag labels: "${current.name}" and "${tag}". Use one spelling consistently.`,
+          );
+        }
+        current.count += 1;
+      } else {
+        tags.set(key, { name: tag, count: 1 });
+      }
     }
   }
   return [...tags.values()].sort((left, right) => left.name.localeCompare(right.name, 'en'));

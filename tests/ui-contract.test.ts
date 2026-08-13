@@ -48,12 +48,19 @@ describe('visual shell contract', () => {
     expect(footer).toContain('re.aier@outlook.com');
   });
 
-  it('provides accessible image and solid background choices', async () => {
+  it('provides accessible image backgrounds and 44px color controls with compact swatches', async () => {
     const panel = await read('src/components/PreferencePanel.astro');
+    const css = await read('src/styles/global.css');
     expect(panel).toContain('aria-label="背景样式"');
     expect(panel).toContain('data-background-choice={background.name}');
+    expect(panel).toContain('aria-label={background.label}');
     expect(panel).toContain('aria-pressed={background.name === DEFAULT_BACKGROUND}');
     expect(panel).not.toContain('<span>{background.label}</span>');
+    expect(css).toMatch(/\.accent-choice \{[^}]*width: 44px;[^}]*height: 44px;[^}]*\}/);
+    expect(css).toMatch(/\.accent-choice::before \{[^}]*inset: 3px;[^}]*border-radius: 50%;[^}]*\}/);
+    expect(css).toMatch(/\.background-choice\[data-background-kind="solid"\] \{[^}]*width: 44px;[^}]*height: 44px;[^}]*flex: 0 0 44px;[^}]*border-radius: 50%;[^}]*\}/);
+    expect(css).toMatch(/\.background-choice\[data-background-kind="solid"\]::before \{[^}]*inset: 3px;[^}]*border-radius: 50%;[^}]*\}/);
+    expect(css).toMatch(/\.background-choice\[data-background-kind="image"\] \{[^}]*aspect-ratio: 4 \/ 3;[^}]*\}/);
   });
   it('keeps mobile navigation and preferences inside a single viewport-safe interaction layer', async () => {
     const controller = await read('src/scripts/motion-controller.ts');

@@ -79,26 +79,57 @@ describe('clip registry', () => {
     expect(definitions[0]?.slug).toBe('astro-config');
   });
 
-  it('loads declarations from published posts, ignores drafts and unreferenced files', async () => {
+  it('loads declarations from published posts and ignores every YAML form of draft true', async () => {
     const { root, clipsRoot, blogRoot } = await createTempRoots();
-    await writeFile(join(clipsRoot, 'example.ts'), 'export const ok = true;\n', 'utf8');
+    await writeFile(join(clipsRoot, 'example.ts'), 'export const explicit = true;\n', 'utf8');
+    await writeFile(join(clipsRoot, 'no-draft.ts'), 'export const implicit = true;\n', 'utf8');
     await writeFile(join(clipsRoot, 'unused.ts'), 'export const unused = true;\n', 'utf8');
     await writeFile(
       join(blogRoot, 'published.md'),
-      `---\ntitle: Published\ndraft: false\n---\n\n\`\`\`clip\n${validFence.replaceAll('astro-config', 'example').replace('astro.config.ts', 'example.ts')}\n\`\`\``,
+      `---\ntitle: Published\ndraft: false\n---\n\n${'```'}clip\n${validFence.replace('astro.config.ts', 'example.ts')}\n${'```'}`,
       'utf8',
     );
     await writeFile(
-      join(blogRoot, 'draft.md'),
-      `---\ntitle: Draft\ndraft: true\n---\n\n\`\`\`clip\n${validFence.replaceAll('astro-config', 'draft-only').replace('astro.config.ts', 'missing.ts')}\n\`\`\``,
+      join(blogRoot, 'published-without-draft.md'),
+      `---\ntitle: Published without draft\n---\n\n${'```'}clip\n${validFence.replace('astro.config.ts', 'no-draft.ts')}\n${'```'}`,
+      'utf8',
+    );
+
+    const draftFrontmatter = [
+      ['plain', 'draft: true'],
+      ['tagged', 'draft: !!bool true'],
+      ['anchored', 'draft: &publishState true'],
+    ] as const;
+    for (const [name, draft] of draftFrontmatter) {
+      await writeFile(
+        join(blogRoot, `draft-${name}.md`),
+        `---\ntitle: Draft ${name}\n${draft}\n---\n\n${'```'}clip\n${validFence.replace('astro.config.ts', `missing-${name}.ts`)}\n${'```'}`,
+        'utf8',
+      );
+    }
+
+    try {
+      const clips = loadClips(clipsRoot, blogRoot);
+      expect(clips.map((clip) => clip.slug)).toEqual(['example', 'no-draft']);
+      expect(clips.map((clip) => clip.code)).toEqual([
+        'export const explicit = true;\n',
+        'export const implicit = true;\n',
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('propagates invalid frontmatter instead of publishing its clips', async () => {
+    const { root, clipsRoot, blogRoot } = await createTempRoots();
+    await writeFile(
+      join(blogRoot, 'invalid.md'),
+      `---\ntitle: Invalid\ndraft: [true\n---\n\n${'```'}clip\n${validFence}\n${'```'}`,
       'utf8',
     );
 
     try {
-      const clips = loadClips(clipsRoot, blogRoot);
-      expect(clips).toHaveLength(1);
-      expect(clips[0]?.slug).toBe('example');
-      expect(clips[0]?.code).toBe('export const ok = true;\n');
+      expect(() => loadClips(clipsRoot, blogRoot)).toThrow();
     } finally {
       await rm(root, { recursive: true, force: true });
     }

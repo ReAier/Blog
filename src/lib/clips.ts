@@ -1,3 +1,4 @@
+import { parseFrontmatter } from '@astrojs/markdown-remark';
 import { readFileSync, readdirSync, statSync, type Dirent } from 'node:fs';
 import { basename, dirname, join, parse, resolve } from 'node:path';
 
@@ -184,8 +185,7 @@ export function extractClipDefinitions(markdown: string): ClipDefinition[] {
 }
 
 function isDraftMarkdown(markdown: string): boolean {
-  const frontmatter = /^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(markdown);
-  return frontmatter ? /^draft\s*:\s*true\s*(?:#.*)?$/im.test(frontmatter[1]) : false;
+  return parseFrontmatter(markdown).frontmatter.draft === true;
 }
 
 function listMarkdownFiles(root: string): string[] {
