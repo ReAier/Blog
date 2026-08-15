@@ -1,9 +1,13 @@
-﻿import { readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+function normalizeSource(value: string) {
+  return value.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
+}
+
 async function source(relativePath: string) {
-  return readFile(join(process.cwd(), 'admin', 'client', 'src', relativePath), 'utf8');
+  return normalizeSource(await readFile(join(process.cwd(), 'admin', 'client', 'src', relativePath), 'utf8'));
 }
 
 describe('blog-styled form control integration', () => {

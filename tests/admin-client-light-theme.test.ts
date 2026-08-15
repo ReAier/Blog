@@ -1,9 +1,10 @@
-﻿import { readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const clientRoot = join(process.cwd(), 'admin', 'client', 'src');
-const read = (path: string) => readFile(join(clientRoot, path), 'utf8');
+const normalizeSource = (value: string) => value.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
+const read = async (path: string) => normalizeSource(await readFile(join(clientRoot, path), 'utf8'));
 
 function themeBlock(css: string, selector: string): string {
   const start = css.indexOf(selector);
