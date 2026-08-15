@@ -6,14 +6,15 @@
 
 ## 核心能力
 
-- Astro 7 静态生成，无数据库和运行时服务依赖。
+- 公开站点由 Astro 7 静态生成，无数据库和运行时服务依赖；管理后台独立运行 Fastify、React 与 SQLite。
 - Markdown 内容集合，构建时校验文章元数据。
 - 文章列表、标签、归档、RSS、sitemap 与规范链接。
 - KaTeX 数学公式和 Shiki 代码高亮。
 - `callout`、`reference`、`clip` 三种自定义 Markdown 围栏。
 - 独立代码剪切板页面和原始文本下载。
 - 深浅主题、五种强调色、移动端适配和减少动态效果支持。
-- PowerShell + SSH + Nginx 原子发布脚本，也可部署到普通静态托管平台。
+- 跨平台 Node.js + SSH 原子升级博客与后台系统，公开版本统一由管理后台发布。
+- 提供使用独立 Bearer Token、Scope、revision 并发控制和 OpenAPI 3.1 的受限 AI REST API。
 - Vitest 覆盖内容工具、Markdown 扩展、UI 契约、动效策略和生产构建产物。
 
 ## 技术栈
@@ -23,13 +24,13 @@
 - Markdown / Remark / Rehype
 - KaTeX
 - Vitest
-- PowerShell、SSH、Nginx（当前生产部署方案）
+- Node.js、SSH、Nginx（当前生产部署方案）
 
 ## 快速开始
 
 ### 环境要求
 
-需要本机安装 Node.js、npm 和 Git。项目没有声明独立的 Node.js `engines` 约束；安装时应使用与当前 Astro 版本兼容的 Node.js 版本，并以 `package-lock.json` 为依赖版本来源。
+需要 **Node.js 24 LTS**、npm 和 Git。支持范围以 `package.json` 为准，依赖版本以 `package-lock.json` 为准。
 
 ```powershell
 git clone https://github.com/ReAier/Blog.git
@@ -51,8 +52,13 @@ npm run dev
 | `npm test` | 以监听模式运行测试 |
 | `npm run build` | 校验并生成生产站点到 `dist/` |
 | `npm run preview` | 本地预览 `dist/` 生产构建 |
-| `npm run deploy -- -DryRun` | 演练当前服务器部署流程，不上传或切换版本 |
-| `npm run deploy` | 执行当前生产部署流程 |
+| `npm run admin:build` | 构建 React 管理后台 |
+| `npm run admin:server` | 启动 Fastify 管理服务 |
+| `npm run admin:init -- --username owner` | 从服务器 CLI 初始化唯一管理员 |
+| `npm run upgrade -- --dry-run` | 演练 SSH 系统升级流程，不上传或切换代码版本 |
+| `npm run upgrade` | 升级博客代码与后台系统，不切换公开静态版本 |
+
+升级命令会在交互式终端显示单行进度条，在 CI 或重定向日志中每个阶段只显示一行。各子命令的正常输出会被隐藏；如果失败，进度显示会先结束，然后在最后统一输出失败阶段、退出码、诊断日志尾部和完整日志路径。Windows、macOS 和 Linux 使用相同命令。
 
 生产输出位于 `dist/`。该目录以及 `.astro/`、`.deploy/` 都是生成内容，不应直接编辑或提交。
 
@@ -158,7 +164,7 @@ description: 可选摘要。
 - 强调色列表与默认值：`src/lib/preferences.ts`
 - Astro、sitemap 和 Markdown 插件：`astro.config.ts`
 - 视觉变量与组件样式：`src/styles/global.css`
-- 当前服务器部署参数与流程：`scripts/deploy.ps1`
+- 当前服务器升级参数与流程：`scripts/upgrade.ts`
 
 修改配置时不要在多个组件中复制相同信息；公共站点信息应继续集中在 `src/config.ts`。
 
@@ -172,7 +178,7 @@ npm run build
 npm test -- --run
 ```
 
-当前生产环境使用 PowerShell 脚本将 `dist/` 上传到 Nginx 服务器并原子切换版本。项目也可以部署到 Nginx、Cloudflare Pages、Netlify 等普通静态托管环境。完整前置条件、演练、回滚和通用托管步骤见[部署与运维](docs/deployment.md)。
+当前生产环境将系统升级与公开发布分离：跨平台 Node.js + SSH 只升级博客代码和管理后台，公开静态版本由后台发布台构建并原子切换。项目也可以部署到 Nginx、Cloudflare Pages、Netlify 等普通静态托管环境。完整前置条件、演练、回滚和通用托管步骤见[部署与运维](docs/deployment.md)。
 
 ## 文档导航
 
@@ -181,6 +187,8 @@ npm test -- --run
 | [架构说明](docs/architecture.md) | 理解模块边界、路由、内容生成和浏览器增强 |
 | [内容创作指南](docs/content-authoring.md) | 新建文章、维护 frontmatter、使用 Markdown 扩展 |
 | [部署与运维](docs/deployment.md) | 当前服务器发布、回滚和通用静态托管 |
+| [管理后台部署](docs/admin-backend.md) | 单用户认证、持久内容、systemd、Nginx 与发布助手 |
+| [AI REST API](docs/ai-api.md) | Token 生命周期、Scope、OpenAPI、并发更新、限流与安全边界 |
 | [维护与测试指南](docs/maintenance.md) | AI 或人工修改项目、选择测试和排查故障 |
 | [云剪切板使用说明](docs/cloud-clipboard.md) | 保存和引用不适合直接放入正文的大段代码 |
 
@@ -191,7 +199,7 @@ npm test -- --run
 - 保持 TypeScript 严格模式和现有代码风格。
 - 不直接修改或提交生成目录。
 - 内容、功能、测试和文档保持同步。
-- 部署前先执行 `npm run deploy -- -DryRun`。
+- 系统升级前先执行 `npm run upgrade -- --dry-run`；公开内容只从后台发布台上线。
 - 不在文章、clip、日志、文档或 Git 历史中提交凭据与敏感信息。
 
 更完整的 AI 维护约束、变更地图和测试选择见[维护与测试指南](docs/maintenance.md)。

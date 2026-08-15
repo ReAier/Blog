@@ -25,7 +25,7 @@ describe('private content repository policy', () => {
     await Promise.all(placeholders.map((path) => expect(access(new URL(path, root))).resolves.toBeUndefined()));
   });
 
-  it('tracks only content directory placeholders', async () => {
+  it.skipIf(process.env.BLOG_BUILD_SNAPSHOT === '1')('tracks only content directory placeholders', async () => {
     const { stdout } = await execFileAsync('git', ['ls-files', 'src/content'], {
       cwd: new URL('.', root),
     });

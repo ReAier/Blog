@@ -1,0 +1,15 @@
+[Unit]
+Description=Aier Blog privileged static release switch helper
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/var/lib/aier-blog/publish-requests
+ExecStart=/usr/local/sbin/aier-blog-publish-worker
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/aier-blog/publish-requests /var/www/aier-blog /etc/nginx/snippets

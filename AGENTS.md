@@ -12,7 +12,7 @@ This is an Astro 7 static blog. Application code lives in `src/`: reusable UI in
 - `npm test -- --run` runs Vitest once; use `npm test` for watch mode.
 - `npm run build` validates and generates the production site in `dist/`.
 - `npm run preview` serves the production build locally.
-- `npm run deploy -- -DryRun` validates the PowerShell deployment flow without switching the live release.
+- `npm run upgrade -- --dry-run` validates the cross-platform Node.js SSH system-upgrade flow without uploading or switching code.
 
 ## Coding Style & Naming Conventions
 
@@ -28,4 +28,4 @@ Recent history follows Conventional Commit-style subjects such as `feat: add ICP
 
 ## Security & Configuration Tips
 
-Do not commit `.env*`, logs, deployment archives, credentials, or server details. Treat `npm run deploy` as a production operation; use `-DryRun` first and verify the intended SSH target and generated build.
+Do not commit `.env*`, logs, deployment archives, credentials, or server details. Treat `npm run upgrade` as a production system operation; use `--dry-run` first and verify the intended SSH target and generated archive. Public content releases must be started from the admin publish page.

@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch Aier Blog release requests
+
+[Path]
+PathExistsGlob=/var/lib/aier-blog/publish-requests/*.request.json
+Unit=aier-blog-publish.service
+
+[Install]
+WantedBy=multi-user.target

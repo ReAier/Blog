@@ -1,6 +1,6 @@
 # 部署与运维
 
-本文同时覆盖当前生产服务器的发布流程，以及不绑定具体服务器的静态托管方式。项目构建和目录说明见[项目 README](../README.md)与[架构说明](architecture.md)。
+本文同时覆盖当前生产服务器的系统升级与后台发布流程，以及不绑定具体服务器的静态托管方式。项目构建和目录说明见[项目 README](../README.md)与[架构说明](architecture.md)。
 
 ## 静态部署契约
 
@@ -33,144 +33,90 @@ npm run preview
 
 `dist/` 是可删除、可重新生成的产物，不应手工修改或提交。
 
-## 私有内容准备
+## 当前生产系统升级与后台发布
 
-Git 仓库只包含 `src/content/` 的空目录占位符。任何需要部署完整博客的机器都必须在构建前，从独立备份恢复以下本地内容：
+生产环境严格分离两条链路：
 
-```text
-src/content/blog/
-src/content/clips/
-src/content/images/
-```
+- `npm run upgrade` 通过 SSH 升级 `/opt/aier-blog/current` 中的博客代码和管理后台。
+- 管理后台“发布台”负责验证持久内容、构建 Astro 静态站点，并通过受限特权助手切换 `/var/www/aier-blog/current`。
 
-恢复后先运行 `npm run check`，确认文章 schema、clip 引用和图片路径完整。不要把私有内容包放入 `.deploy/` 的发布归档之外，也不要通过强制添加绕过 `.gitignore`。
-## 当前生产部署
+SSH 升级不会构建或切换公开站点。升级完成后，访客继续看到升级前的静态版本，直到管理员在后台手动发布。
 
-当前生产方案由 `scripts/deploy.ps1` 实现：
+### SSH 系统升级流程
+
+`scripts/upgrade.ts` 在 Windows、macOS 和 Linux 上执行以下流程：
 
 ```text
-本地检查与构建
+本地检查、测试和构建验证
       │
       ▼
-将 dist/ 打包为 .deploy/aier-blog-<UTC 时间>.tar.gz
+创建不含私有内容、依赖和生成产物的源码归档
       │
       ▼
 通过 scp 上传到服务器 /tmp/
       │
       ▼
-解压到 /var/www/aier-blog/releases/<版本>/
+安装锁定依赖并构建管理后台
       │
       ▼
-原子切换 /var/www/aier-blog/current 软链接
+备份、迁移并校验持久内容
       │
       ▼
-nginx -t、reload、本机 Host 头健康检查
+原子切换 /opt/aier-blog/current
       │
-      ├── 成功：清理旧版本，保留最近 5 个
-      └── 失败：恢复 previous 链接并重新加载 Nginx
+      ▼
+重启并健康检查后台服务
+      │
+      ├── 成功：保留公开静态版本，等待后台手动发布
+      └── 失败：回滚代码和迁移前内容
 ```
 
-### 本地前置条件
+本地需要 Node.js、npm，以及 PATH 中可用的 `tar`、`scp` 和 `ssh`，并配置 SSH 别名 `aliyun-aiopt`。Windows 会自动使用对应的 `.cmd` 或 `.exe` 命令。认证由本机 SSH 配置和密钥代理负责，不得写入仓库。
 
-- Windows PowerShell 能运行 `npm.cmd`、`tar.exe`、`scp.exe` 和 `ssh.exe`。
-- 已安装项目依赖。
-- 本机 SSH 配置中存在可用别名 `aliyun-aiopt`，或通过脚本参数指定其他别名。
-- 当前用户能够向远端 `/tmp/` 上传文件，并能够维护站点目录与重新加载 Nginx。
-- DNS 和 Nginx 已将 `blog.reaier.top` 指向该静态站点。
-
-不要把主机密码、私钥、Token 或服务器地址写入脚本、文档或仓库。SSH 认证应由本机 SSH 配置和密钥代理负责。
-
-### 服务器目录
-
-```text
-/var/www/aier-blog/
-├── current -> releases/<当前版本>
-└── releases/
-    ├── 20260811T010000Z/
-    ├── 20260810T120000Z/
-    └── ...
-```
-
-脚本以 UTC 时间 `yyyyMMddTHHmmssZ` 生成版本号。`current` 是 Nginx 应指向的入口；每次部署创建新目录，不覆盖旧版本内容。
-
-### 部署演练
-
-先运行：
+先执行演练：
 
 ```powershell
-npm run deploy -- -DryRun
+npm run upgrade -- --dry-run
 ```
 
-演练仍会执行：
-
-1. `npm run check`
-2. `npm test -- --run`
-3. `npm run build`
-4. 将 `dist/` 打包到 `.deploy/`
-
-演练不会执行上传、远端解压、软链接切换或 Nginx 重载。终端会显示归档文件和目标地址，可用于确认即将部署的版本。
-
-指定其他 SSH 别名：
+演练会执行本地检查、测试、后台构建、内容校验和博客构建，并创建源码归档，但不会上传或切换代码。指定其他 SSH 别名：
 
 ```powershell
-npm run deploy -- -DryRun -SshHost staging-blog
+npm run upgrade -- --dry-run --ssh-host staging-blog
 ```
 
-PowerShell 会把 `-DryRun` 和 `-SshHost` 传给 `scripts/deploy.ps1`。
-
-### 正式部署
+正式升级：
 
 ```powershell
-npm run deploy
+npm run upgrade
 ```
 
-脚本失败时会以非零状态退出。不要在未阅读错误输出的情况下重复运行；先确定失败发生在本地检查、上传、远端切换、Nginx 验证还是健康检查阶段。
+升级前后可记录并比较公开版本，确认 SSH 没有触碰它：
 
-### 原子切换与自动回滚
-
-远端脚本会：
-
-1. 保存 `current` 原来指向的版本。
-2. 解压新归档并确认 `index.html` 非空。
-3. 创建 `current.next` 并使用 `mv -Tf` 切换为 `current`。
-4. 执行 `nginx -t`。
-5. 重新加载 Nginx。
-6. 使用 `Host: blog.reaier.top` 请求本机 `http://127.0.0.1/`。
-
-如果 Nginx 配置验证失败，脚本恢复之前的 `current`。如果健康检查失败，脚本恢复旧版本并再次验证、加载 Nginx。
-
-部署成功后，脚本按版本名倒序保留最近五个版本，并额外保护当前版本，避免当前软链接指向的目录被清理。
-
-### 手动回滚
-
-登录服务器：
-
-```powershell
-ssh aliyun-aiopt
+```bash
+readlink -f /var/www/aier-blog/current
 ```
 
-查看版本和当前目标：
+代码升级失败时，`deployment/install-code.sh` 恢复原 `/opt/aier-blog/current`；如果已执行内容迁移，也会恢复迁移前备份。
+
+### 后台公开发布流程
+
+管理员在后台发布台启动任务后，服务会创建位于 `/var/lib/aier-blog/jobs` 的隔离快照，依次运行内容校验、`npm run check` 和生产构建。代码单元测试只在 SSH 系统升级前运行，因为后台持久内容不是仓库测试夹具，不应决定代码测试是否通过。快照会创建独立、可写的 `node_modules` 目录：普通依赖文件优先使用硬链接复用，目录本身不再指向代码版本中的只读 `node_modules`，跨文件系统时则回退为复制。Astro 内容缓存写入快照自己的 `.astro`，Vite 依赖缓存写入 `.astro/vite`。这样既不会修改代码版本中的依赖目录，也避免同一模块同时出现 release 路径和 workspace 路径。
+
+构建成功后，后台只向 `/var/lib/aier-blog/publish-requests` 写入受限请求。root-owned systemd path/service 校验构建路径后调用 `aier-blog-publish-release`，原子切换 `/var/www/aier-blog/current`、更新重定向、验证 Nginx 并执行健康检查。失败时保持或恢复上一公开版本。
+
+文章、Clip、图片、重定向以及博客模板新版本的公开上线都必须经过这条后台发布链路。
+
+### 手动回滚公开版本
+
+若必须紧急回滚，先登录服务器并检查版本：
 
 ```bash
 ls -1dt /var/www/aier-blog/releases/*
 readlink -f /var/www/aier-blog/current
 ```
 
-确认目标版本完整后切换：
-
-```bash
-ln -sfn /var/www/aier-blog/releases/版本目录 /var/www/aier-blog/current.next
-mv -Tf /var/www/aier-blog/current.next /var/www/aier-blog/current
-nginx -t && systemctl reload nginx
-```
-
-然后执行本机健康检查：
-
-```bash
-curl -fsS --max-time 15 -H 'Host: blog.reaier.top' http://127.0.0.1/ >/dev/null
-```
-
-手动回滚前应记录原 `current` 目标，以便在选错版本时再次恢复。
+确认目标版本完整后再原子切换链接，并运行 `nginx -t`、reload 和站点健康检查。正常内容更新不要使用 SSH 手工发布。
 
 ## 通用 Nginx 静态托管
 
@@ -314,7 +260,7 @@ ssh aliyun-aiopt
 - 不提交 `.env*`、部署归档、日志、SSH 配置、私钥或服务器凭据。
 - `.deploy/` 只用于本地临时归档。
 - clip 页面和原始文本是公开内容，不用于保存秘密。
-- 正式部署前先执行 `-DryRun` 并检查 SSH 目标。
+- 正式部署前先执行 `--dry-run` 并检查 SSH 目标。
 - 不使用 `npm audit fix --force` 等命令在部署过程中自动升级依赖；依赖升级应作为独立变更验证。
 
 ## 相关文档

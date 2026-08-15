@@ -31,8 +31,10 @@ describe('clip registry', () => {
     const source = await import('node:fs/promises').then(({ readFile }) =>
       readFile(new URL('../src/lib/clips.ts', import.meta.url), 'utf8'),
     );
-    expect(source).toContain("resolve(process.cwd(), 'src/content/clips')");
-    expect(source).toContain("resolve(process.cwd(), 'src/content/blog')");
+    expect(source).toContain("import { getContentPaths } from './content-paths'");
+    expect(source).toContain('const contentPaths = getContentPaths()');
+    expect(source).toContain('const clipsRoot = contentPaths.clips');
+    expect(source).toContain('const blogRoot = contentPaths.blog');
   });
 
   it('parses fenced metadata and derives stable URLs and source statistics', () => {

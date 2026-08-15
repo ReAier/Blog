@@ -1,0 +1,170 @@
+:root {
+  --accent: #c74776;
+  --accent-rgb: 199, 71, 118;
+  --page-background: url('/site-background.webp');
+  --serif: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', Georgia, serif;
+  --sans: 'Avenir Next', Avenir, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--serif);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+:root[data-accent='coral'] { --accent: #f05a3c; --accent-rgb: 240, 90, 60; }
+:root[data-accent='teal'] { --accent: #16a085; --accent-rgb: 22, 160, 133; }
+:root[data-accent='indigo'] { --accent: #4f6bed; --accent-rgb: 79, 107, 237; }
+:root[data-accent='amber'] { --accent: #d89016; --accent-rgb: 216, 144, 22; }
+:root[data-accent='rose'] { --accent: #c74776; --accent-rgb: 199, 71, 118; }
+
+:root[data-background='default'] { --page-background: url('/site-background.webp'); }
+:root[data-background='background-2'] { --page-background: url('/site-background-2.webp'); }
+:root[data-background='background-3'] { --page-background: url('/site-background-3.webp'); }
+:root[data-background='warm-rice'] { --page-background: linear-gradient(#eee8dc, #eee8dc); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-background='mist-gray'] { --page-background: linear-gradient(#e4e6e5, #e4e6e5); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-background='sage'] { --page-background: linear-gradient(#dde5d8, #dde5d8); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-background='morning-blue'] { --page-background: linear-gradient(#dce5e9, #dce5e9); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-background='lotus-pink'] { --page-background: linear-gradient(#e8dde0, #e8dde0); --backdrop-overlay: linear-gradient(transparent, transparent); }
+
+/* Blog-aligned admin visual system */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+  --admin-canvas: #f4f1eb;
+  --bg: var(--admin-canvas);
+  --surface: rgba(255, 254, 250, .82);
+  --surface-solid: #fffefa;
+  --surface-muted: #eae6de;
+  --surface-soft: rgba(255, 254, 250, .66);
+  --surface-strong: rgba(255, 254, 250, .96);
+  --button-surface: rgba(255, 254, 250, .78);
+  --choice-active-surface: rgba(var(--accent-rgb), .14);
+  --choice-active-text: color-mix(in srgb, var(--accent) 72%, #171816);
+  --notice-surface: rgba(247, 244, 237, .95);
+  --danger-surface: rgba(165, 63, 53, .1);
+  --danger-text: #85362f;
+  --status-surface: rgba(71, 112, 92, .11);
+  --tag-surface: rgba(23, 24, 22, .065);
+  --editor-shell-surface: rgba(255, 254, 250, .72);
+  --frontmatter-surface: rgba(247, 244, 237, .9);
+  --terminal-text: #f1eee7;
+  --terminal-muted: #aaa59d;
+  --terminal-header: #2c2b27;
+  --terminal-border: #403e37;
+  --text: #171816;
+  --muted: #62665f;
+  --placeholder: #7b8078;
+  --line: rgba(23, 24, 22, .14);
+  --line-strong: rgba(23, 24, 22, .28);
+  --shadow: 0 24px 70px rgba(38, 35, 29, .14);
+  --backdrop-overlay: linear-gradient(rgba(244, 241, 235, .58), rgba(244, 241, 235, .76));
+  --ambient-overlay: linear-gradient(90deg, rgba(255, 255, 255, .24), transparent 35%, rgba(61, 54, 45, .06));
+  --panel-surface: rgba(255, 254, 250, .9);
+  --toolbar-surface: rgba(247, 244, 237, .94);
+  --input-surface: rgba(255, 255, 255, .76);
+  --editor-surface: rgba(255, 254, 250, .92);
+  --dialog-surface: rgba(255, 254, 250, .98);
+  --dialog-surface-solid: #fffefa;
+  --terminal-surface: #202326;
+  --scrim: rgba(32, 29, 25, .46);
+  --subtle-fill: rgba(23, 24, 22, .045);
+  --editor-text: #20231f;
+  --editor-muted: #687069;
+  --editor-caret: var(--accent);
+  --editor-selection: rgba(var(--accent-rgb), .2);
+  --editor-gutter: rgba(234, 230, 222, .72);
+  --editor-active-line: rgba(var(--accent-rgb), .055);
+  --editor-comment: #687069;
+  --editor-keyword: #a12652;
+  --editor-string: #206b57;
+  --editor-number: #245f9a;
+  --editor-symbol: #6a3f91;
+  --editor-type: #8a5b08;
+  --editor-punctuation: #88405c;
+  --editor-heading: #171816;
+  --paper: var(--admin-canvas);
+  --paper-bright: var(--surface-solid);
+  --paper-deep: var(--surface-muted);
+  --ink: var(--text);
+  --ink-soft: var(--muted);
+  --ink-faint: #747972;
+  --coral: var(--accent);
+  --coral-dark: color-mix(in srgb, var(--accent) 76%, #171816);
+  --green: #47705c;
+  --gold: #946b28;
+  --red: #a53f35;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --admin-canvas: #090c0e;
+  --bg: var(--admin-canvas);
+  --surface: rgba(16, 19, 21, .88);
+  --surface-solid: #121619;
+  --surface-muted: #1b2024;
+  --surface-soft: rgba(255, 255, 255, .035);
+  --surface-strong: #121619;
+  --button-surface: rgba(18, 21, 23, .88);
+  --choice-active-surface: color-mix(in srgb, var(--accent) 72%, #090c0e);
+  --choice-active-text: #fff;
+  --notice-surface: rgba(16, 19, 21, .94);
+  --danger-surface: rgba(76, 25, 24, .92);
+  --danger-text: #ffd3cf;
+  --status-surface: rgba(9, 12, 14, .48);
+  --tag-surface: rgba(255, 255, 255, .07);
+  --editor-shell-surface: rgba(10, 13, 15, .91);
+  --frontmatter-surface: rgba(17, 20, 22, .92);
+  --terminal-text: #f4f2ed;
+  --terminal-muted: #948e84;
+  --terminal-header: #101214;
+  --terminal-border: rgba(244, 242, 237, .13);
+  --text: #f4f2ed;
+  --muted: #b9b8b3;
+  --placeholder: #8d9296;
+  --line: rgba(244, 242, 237, .13);
+  --line-strong: rgba(244, 242, 237, .25);
+  --shadow: 0 26px 80px rgba(0, 0, 0, .42);
+  --backdrop-overlay: linear-gradient(rgba(7, 10, 12, .66), rgba(7, 10, 12, .86));
+  --ambient-overlay: linear-gradient(90deg, rgba(5, 8, 10, .24), transparent 35%, rgba(5, 8, 10, .14));
+  --panel-surface: rgba(18, 21, 23, .9);
+  --toolbar-surface: rgba(20, 23, 25, .9);
+  --input-surface: rgba(6, 9, 11, .8);
+  --editor-surface: rgba(6, 9, 11, .68);
+  --dialog-surface: rgba(13, 16, 18, .98);
+  --dialog-surface-solid: #121619;
+  --terminal-surface: #090c0e;
+  --scrim: rgba(4, 6, 8, .78);
+  --subtle-fill: rgba(255, 255, 255, .035);
+  --editor-text: #f4f2ed;
+  --editor-muted: #858b91;
+  --editor-caret: #e16491;
+  --editor-selection: rgba(199, 71, 118, .28);
+  --editor-gutter: rgba(8, 10, 12, .5);
+  --editor-active-line: rgba(255, 255, 255, .035);
+  --editor-comment: #858b91;
+  --editor-keyword: #ff7f9f;
+  --editor-string: #a7d7c5;
+  --editor-number: #8fc9ff;
+  --editor-symbol: #d9b8ff;
+  --editor-type: #ffd580;
+  --editor-punctuation: #f2aac4;
+  --editor-heading: #ffffff;
+  --paper: var(--admin-canvas);
+  --paper-bright: var(--surface-solid);
+  --paper-deep: var(--surface-muted);
+  --ink: var(--text);
+  --ink-soft: var(--muted);
+  --ink-faint: #969a9d;
+  --coral: var(--accent);
+  --coral-dark: color-mix(in srgb, var(--accent) 82%, #fff);
+  --green: #8bc8a1;
+  --gold: #e1b968;
+  --red: #ff9488;
+}
+
+:root[data-theme='dark'][data-background='warm-rice'] { --page-background: linear-gradient(#24211c, #24211c); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-theme='dark'][data-background='mist-gray'] { --page-background: linear-gradient(#202322, #202322); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-theme='dark'][data-background='sage'] { --page-background: linear-gradient(#1e261f, #1e261f); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-theme='dark'][data-background='morning-blue'] { --page-background: linear-gradient(#1d2428, #1d2428); --backdrop-overlay: linear-gradient(transparent, transparent); }
+:root[data-theme='dark'][data-background='lotus-pink'] { --page-background: linear-gradient(#282024, #282024); --backdrop-overlay: linear-gradient(transparent, transparent); }

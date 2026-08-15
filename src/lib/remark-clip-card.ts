@@ -1,4 +1,11 @@
-import { formatClipBytes, loadClip, parseClipDefinition, type ClipRecord } from './clips';
+﻿import {
+  formatClipBytes,
+  loadClip,
+  loadClipBySlug,
+  parseClipDefinition,
+  parseClipReference,
+  type ClipRecord,
+} from './clips';
 
 interface MarkdownNode {
   type: string;
@@ -20,7 +27,6 @@ function renderClipCard(clip: ClipRecord): string {
   const title = escapeHtml(clip.title);
   const language = escapeHtml(clip.language);
   const description = clip.description ? `<p>${escapeHtml(clip.description)}</p>` : '';
-
   return `<aside class="clip-card glass" data-clip-card>
   <div class="clip-card__topline">
     <span class="clip-card__mark" aria-hidden="true">&lt;/&gt;</span>
@@ -33,21 +39,21 @@ function renderClipCard(clip: ClipRecord): string {
 </aside>`;
 }
 
-function transformNode(node: MarkdownNode): void {
+function transformNode(node: MarkdownNode, clipsRoot?: string): void {
   if (!node.children) return;
-
   node.children = node.children.map((child) => {
     if (child.type === 'code' && child.lang === 'clip') {
-      const definition = parseClipDefinition(child.value ?? '');
-      return {
-        type: 'html',
-        value: renderClipCard(loadClip(definition)),
-      };
+      const value = child.value ?? '';
+      const slug = parseClipReference(value);
+      const clip = slug
+        ? loadClipBySlug(slug, clipsRoot)
+        : loadClip(parseClipDefinition(value), clipsRoot);
+      return { type: 'html', value: renderClipCard(clip) };
     }
     return child;
   });
 }
 
-export function remarkClipCards() {
-  return (tree: MarkdownNode) => transformNode(tree);
+export function remarkClipCards(options: { clipsRoot?: string } = {}) {
+  return (tree: MarkdownNode) => transformNode(tree, options.clipsRoot);
 }

@@ -6,6 +6,7 @@ dist/
 .env.*
 !.env.example
 .deploy/
+.deploy-redirects.conf
 
 .dev.*
 .homepage.png
@@ -16,6 +17,9 @@ src/content/clips/**
 !src/content/clips/.gitkeep
 src/content/images/**
 !src/content/images/.gitkeep
+src/content/redirects.json
 
 # Local isolated feature workspaces
 .worktrees/
+
+.admin-data/

@@ -7,7 +7,7 @@ describe('callout card integration', () => {
   it('registers the callout plugin in the Markdown pipeline', async () => {
     const config = await read('astro.config.ts');
     expect(config).toContain("import { remarkCalloutCards } from './src/lib/remark-callout-card'");
-    expect(config).toContain('remarkPlugins: [remarkMath, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards]');
+    expect(config).toContain('remarkPlugins: [remarkMath, remarkManagedImages, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards]');
   });
 
   it('defines responsive and accessible callout styles', async () => {

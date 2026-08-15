@@ -7,7 +7,7 @@ describe('reference card integration', () => {
   it('registers the reference plugin after the existing markdown plugins', async () => {
     const config = await read('astro.config.ts');
     expect(config).toContain("import { remarkReferenceCards } from './src/lib/remark-reference-card'");
-    expect(config).toContain('remarkPlugins: [remarkMath, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards]');
+    expect(config).toContain('remarkPlugins: [remarkMath, remarkManagedImages, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards]');
   });
 
   it('defines responsive, accessible reference-card styles', async () => {

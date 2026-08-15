@@ -170,7 +170,7 @@ clip 不是独立内容集合。构建时，`src/lib/clips.ts` 会：
 | 修改 clip 行为 | `clips.ts`、clip 路由、复制脚本、clip 测试与专题文档 |
 | 修改主题或强调色 | `preferences.ts`、`PreferencePanel.astro`、启动内联脚本与 CSS |
 | 修改动效 | `motion.ts`、浏览器脚本、CSS、减少动态效果测试 |
-| 修改部署保留策略 | `deploy.ps1`、`releases.ts`、部署测试与部署文档 |
+| 修改部署保留策略 | `upgrade.ts`、`upgrade-runner.ts`、`releases.ts`、升级/发布测试与部署文档 |
 
 ## 设计约束
 
@@ -181,9 +181,16 @@ clip 不是独立内容集合。构建时，`src/lib/clips.ts` 会：
 - 站点公共信息保持单一来源。
 - 修改生产输出契约时必须更新构建产物测试和部署文档。
 
+## 管理后台与机器 API 边界
+
+公开博客仍是纯静态产物。Fastify、SQLite 和 React 只服务于独立管理域名，不进入公开站点运行时。浏览器后台使用同源 Cookie、稳定 CSRF Token 和单管理员会话；`/api/v1` 机器接口使用只保存哈希的 Bearer Token、细粒度 Scope、每资源 revision、审计日志和独立限流。
+
+机器 API 只能读写文章、独立代码片段和图片。新建文章强制保持草稿，更新不能修改 slug、草稿状态或精选状态；发布、删除、恢复、备份和认证管理没有机器接口。OpenAPI 3.1 文档和 Fastify 路由请求 Schema 复用同一组定义。
+
 ## 相关文档
 
 - [项目 README](../README.md)
+- [AI REST API 使用指南](ai-api.md)
 - [内容创作指南](content-authoring.md)
 - [部署与运维](deployment.md)
 - [维护与测试指南](maintenance.md)

@@ -74,11 +74,7 @@ http://localhost:4321/clips/oauth-callback.txt
 - 修改 slug：重命名源码文件并同步修改围栏中的 `file`；旧详情页链接不会自动跳转。
 - 删除：移除文章中的围栏；不再使用的源码文件可以一并删除，也可以保留为未引用文件。
 
-正式部署仍使用：
-
-```powershell
-npm run deploy
-```
+修改完成后在管理后台的发布台执行正式发布。SSH 的 `npm run upgrade` 只升级博客和后台系统，不会公开文章、剪切板或图片。
 
 ## 可见性与安全
 

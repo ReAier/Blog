@@ -7,14 +7,11 @@
 每次变更应同时满足：
 
 - 不破坏静态生成、内容可读性、SEO 和公开 URL。
-- 保持没有 JavaScript 时的基础访问能力。
+- 保持没有 JavaScript时的基础访问能力。
 - 保持键盘操作、ARIA 状态和减少动态效果策略。
 - 保持内容 schema、实现、测试和文档一致。
 - 不将凭据、部署信息或生成产物提交到仓库。
 
-## 私有内容边界
-
-Git 只跟踪 `src/content/blog/.gitkeep`、`src/content/clips/.gitkeep` 和 `src/content/images/.gitkeep`。文章、clip 和文章图片属于本地数据：修改前确认备份，提交前使用 `git ls-files src/content` 检查没有实际内容被重新纳入索引。测试不得依赖固定的私人文章文件名；生产产物测试只对当前本地实际生成的文章和 clip 执行通用契约检查。
 ## 开始修改前
 
 1. 阅读根目录 `AGENTS.md` 和相关专题文档。
@@ -37,7 +34,7 @@ Git 只跟踪 `src/content/blog/.gitkeep`、`src/content/clips/.gitkeep` 和 `sr
 | 修改主题或强调色 | `preferences.ts`、偏好面板、基础布局内联启动脚本、CSS | preferences、default accent、UI 测试 |
 | 修改动效或导航增强 | `motion.ts`、`src/scripts/`、CSS | motion policy、motion contract、UI 测试 |
 | 修改 SEO、RSS、sitemap | `SeoHead.astro`、`rss.xml.ts`、Astro 配置 | 构建产物测试和生产构建 |
-| 修改部署流程 | `scripts/deploy.ps1`、`releases.ts` | deploy helpers、`-DryRun`、部署文档 |
+| 修改部署流程 | `scripts/upgrade.ts`、`scripts/upgrade-runner.ts`、`releases.ts` | deploy helpers、`--dry-run`、部署文档 |
 | 修改全局样式 | `global.css`、关联组件 | UI 契约、响应式/无障碍测试、构建 |
 
 “最低验证”不是上限。只要变更跨越多个区域，就运行这些区域验证的并集。
@@ -86,7 +83,7 @@ astro build
 
 在本地提供生产构建，用于人工检查页面、响应式布局、主题、复制操作、目录高亮和导航切换。
 
-### `npm run deploy -- -DryRun`
+### `npm run upgrade -- --dry-run`
 
 执行检查、测试、构建和打包，但不连接服务器。它验证部署脚本的本地阶段，不替代正式部署后的健康检查。
 
@@ -119,7 +116,7 @@ npm run preview
 npm run check
 npm run build
 npm test -- --run
-npm run deploy -- -DryRun
+npm run upgrade -- --dry-run
 ```
 
 正式部署只在确认目标 SSH 别名、归档路径和构建产物后执行。
@@ -192,7 +189,7 @@ npm run deploy -- -DryRun
 
 如果改变构建命令、输出目录、正式域名、健康检查、版本目录或保留数量，必须同步更新：
 
-- `package.json` 或 `scripts/deploy.ps1`。
+- `package.json`、`scripts/upgrade.ts` 或 `scripts/upgrade-runner.ts`。
 - 可测试的部署辅助函数。
 - 构建产物测试。
 - README 与部署文档。
@@ -268,7 +265,7 @@ AI 代理在修改本项目时应遵守：
 - [ ] `npm run build` 通过。
 - [ ] `npm test -- --run` 通过。
 - [ ] 可见 UI 变更已人工预览并准备截图。
-- [ ] 部署变更已执行 `npm run deploy -- -DryRun`。
+- [ ] 部署变更已执行 `npm run upgrade -- --dry-run`。
 - [ ] `git diff --check` 没有空白错误。
 
 ## 相关文档

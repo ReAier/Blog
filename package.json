@@ -6,25 +6,68 @@
   "scripts": {
     "dev": "astro dev --force",
     "check": "astro check",
-    "test": "vitest",
+    "test": "vitest --configLoader runner",
     "build": "astro check && astro build --force",
     "preview": "astro preview",
-    "deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy.ps1"
+    "admin:dev": "vite --config admin/client/vite.config.ts",
+    "admin:build": "vite build --config admin/client/vite.config.ts",
+    "admin:server": "tsx admin/server/index.ts",
+    "admin:init": "tsx admin/cli/index.ts init",
+    "admin:reset": "tsx admin/cli/index.ts reset",
+    "admin:prepare-setup": "tsx admin/cli/index.ts prepare-setup",
+    "admin:check": "tsc -p admin/client/tsconfig.json --noEmit && astro check",
+    "upgrade": "tsx scripts/upgrade.ts",
+    "admin:validate-content": "tsx admin/cli/validate-content.ts",
+    "admin:content-hash": "tsx admin/cli/content-hash.ts",
+    "admin:migrate-independent-assets": "tsx admin/cli/migrate-independent-assets.ts"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.2.2",
     "@astrojs/rss": "4.0.19",
     "@astrojs/sitemap": "3.7.3",
+    "@codemirror/lang-cpp": "^6.0.3",
+    "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/lang-python": "^6.2.1",
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/helmet": "^13.1.0",
+    "@fastify/multipart": "^9.4.0",
+    "@fastify/static": "10.1.3",
     "astro": "7.2.1",
+    "codemirror": "^6.0.2",
+    "fast-uri": "3.1.5",
+    "fastify": "^5.11.3",
     "katex": "^0.17.0",
     "mdast-util-from-markdown": "^2.0.3",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2",
     "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "sharp": "0.35.3",
+    "tsx": "4.23.12",
+    "yauzl": "^3.4.0",
+    "yazl": "^3.3.1"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.9",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "26.1.1",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@types/yauzl": "^2.10.3",
+    "@types/yazl": "^3.3.1",
+    "@vitejs/plugin-react": "^5.2.0",
+    "jsdom": "^26.1.0",
     "typescript": "6.0.3",
+    "vite": "^7.3.6",
     "vitest": "4.1.10"
-  }
+  },
+  "engines": {
+    "node": ">=24.7.0 <25"
+  },
+  "packageManager": "npm@11.12.1"
 }

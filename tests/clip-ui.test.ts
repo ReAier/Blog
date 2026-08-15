@@ -92,7 +92,7 @@ describe('cloud clipboard UI contract', () => {
   it('registers the clip remark plugin and excludes clip pages from the sitemap', async () => {
     const config = await read('astro.config.ts');
     expect(config).toContain('remarkClipCards');
-    expect(config).toContain('remarkPlugins: [remarkMath, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards]');
+    expect(config).toContain('remarkPlugins: [remarkMath, remarkManagedImages, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards]');
     expect(config).toContain("!page.includes('/clips/')");
   });
 

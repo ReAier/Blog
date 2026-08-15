@@ -12,7 +12,7 @@ describe('problem card integration', () => {
   it('registers the problem card remark plugin', async () => {
     const config = await read('astro.config.ts');
     expect(config).toContain("import { remarkProblemCards } from './src/lib/remark-problem-card'");
-    expect(config).toContain('remarkPlugins: [remarkMath, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards]');
+    expect(config).toContain('remarkPlugins: [remarkMath, remarkManagedImages, remarkCalloutCards, remarkClipCards, remarkReferenceCards, remarkProblemCards]');
   });
 
   it('defines all difficulty rails and responsive problem card interactions', async () => {
