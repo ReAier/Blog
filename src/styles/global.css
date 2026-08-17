@@ -28,6 +28,9 @@
   --post-card-pigment-radius-hover: 220px;
   --post-card-blur: 18px;
   --post-card-hover-shadow: 0 22px 58px rgba(38, 35, 29, .12);
+  --post-list-surface: rgba(255, 254, 250, .46);
+  --post-list-surface-fallback: rgba(255, 254, 250, .9);
+  --post-list-shadow: 0 22px 64px rgba(38, 35, 29, .1);
   --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
   --sans: "Avenir Next", Avenir, "Noto Sans SC", "Microsoft YaHei", sans-serif;
   --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
@@ -73,6 +76,9 @@
   --post-card-muted: #c3c2bd;
   --post-card-blur: 20px;
   --post-card-hover-shadow: 0 24px 64px rgba(0, 0, 0, .34);
+  --post-list-surface: rgba(16, 18, 20, .48);
+  --post-list-surface-fallback: rgba(16, 18, 20, .92);
+  --post-list-shadow: 0 24px 68px rgba(0, 0, 0, .3);
   --embedded-card-surface: rgba(20, 22, 24, .62);
   --code-surface: rgba(18, 20, 22, .66);
   --code-surface-fallback: #1b1e21;
@@ -203,9 +209,21 @@ button { color: inherit; }
 .page-head { padding: 56px 0 40px; }
 .page-title { margin: 0; font-family: var(--serif); font-size: clamp(2.8rem, 7vw, 6rem); letter-spacing: -.065em; line-height: .96; }
 .empty-state { padding: 50px 0; color: var(--muted); }
-.post-list { margin: 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
+.post-list {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--post-list-surface);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .06), var(--post-list-shadow);
+  -webkit-backdrop-filter: blur(16px) saturate(125%);
+  backdrop-filter: blur(16px) saturate(125%);
+  list-style: none;
+}
 .post-list-item { position: relative; border-bottom: 1px solid var(--line); }
-.post-list-item__link { display: grid; grid-template-columns: minmax(118px, .22fr) minmax(0, 1fr) minmax(130px, .3fr); gap: 24px; align-items: start; margin-inline: -18px; padding: 28px 18px; color: inherit; text-decoration: none; background: linear-gradient(90deg, rgba(var(--accent-rgb), 0), transparent 72%); transition: color var(--motion-fast), background-color var(--motion-fast), background-image var(--motion-base), padding var(--motion-base) var(--motion-ease); }
+.post-list-item:last-child { border-bottom: 0; }
+.post-list-item__link { display: grid; grid-template-columns: minmax(118px, .22fr) minmax(0, 1fr) minmax(130px, .3fr); gap: 24px; align-items: start; margin-inline: 0; padding: 28px 22px; color: inherit; text-decoration: none; background: linear-gradient(90deg, rgba(var(--accent-rgb), 0), transparent 72%); transition: color var(--motion-fast), background-color var(--motion-fast), background-image var(--motion-base), padding var(--motion-base) var(--motion-ease); }
 .post-list-item__link::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 2px; background: var(--accent); transform: scaleY(0); transform-origin: center; transition: transform var(--motion-base) var(--motion-ease); }
 .post-list-item__link:hover, .post-list-item__link:focus-visible { background: linear-gradient(90deg, rgba(var(--accent-rgb), .08), rgba(var(--accent-rgb), .018) 54%, transparent 82%); }
 .post-list-item__link:hover::before, .post-list-item__link:focus-visible::before { transform: scaleY(1); }
@@ -222,7 +240,12 @@ button { color: inherit; }
 .post-list--compact .post-list-item__description { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 
 @media (max-width: 760px) {
-  .post-list-item__link { grid-template-columns: 1fr; gap: 10px; padding-block: 24px; }
+  .post-list {
+    border-radius: 16px;
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    backdrop-filter: blur(12px) saturate(120%);
+  }
+  .post-list-item__link { grid-template-columns: 1fr; gap: 10px; padding: 24px 18px; }
   .post-list--compact .post-list-item__link { grid-template-columns: 1fr; gap: 8px; padding-block: 20px; }
   .post-list-item__dates { flex-direction: row; flex-wrap: wrap; gap: 6px 14px; }
   .post-list-item__tags { justify-self: start; text-align: left; }
@@ -290,6 +313,7 @@ button { color: inherit; }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass, .post-card { background: var(--surface-solid); }
+  .post-list { background: var(--post-list-surface-fallback); }
 }
 .article-header { padding: 70px 0 52px; }
 .article-title { margin: 0 0 22px; font-family: var(--serif); font-size: clamp(2.8rem, 7vw, 6.4rem); line-height: .98; letter-spacing: -.065em; }
