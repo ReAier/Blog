@@ -14,6 +14,7 @@ Environment=BLOG_ADMIN_DATA_ROOT=/var/lib/aier-blog
 Environment=ADMIN_HOST=127.0.0.1
 Environment=ADMIN_PORT=4310
 Environment=ADMIN_PUBLIC_ORIGIN=https://admin.blog.reaier.top
+Environment=BLOG_SITE_ORIGIN=https://blog.reaier.top
 Environment=BLOG_PUBLISH_REQUEST_ROOT=/var/lib/aier-blog/publish-requests
 EnvironmentFile=/etc/aier-blog/admin.env
 ExecStart=/usr/local/bin/node --import tsx admin/server/index.ts

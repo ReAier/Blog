@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-export type PublishStatus = 'queued' | 'validating' | 'building' | 'switching' | 'succeeded' | 'failed';
+export type PublishStatus = 'preparing' | 'queued' | 'validating' | 'building' | 'switching' | 'succeeded' | 'failed';
 
 export interface PublishJob {
   id: string;
@@ -67,11 +67,10 @@ export class PublishCoordinator {
   }
 
   async publish(): Promise<PublishJob> {
-    const snapshot = await this.dependencies.snapshot();
     const job: PublishJob = {
       id: randomUUID(),
-      status: 'queued',
-      contentHash: snapshot.contentHash,
+      status: 'preparing',
+      contentHash: '',
       log: '',
       createdAt: new Date().toISOString(),
     };
@@ -82,8 +81,19 @@ export class PublishCoordinator {
     };
     this.emit(job);
 
-    const run = this.queue.then(async () => {
+    const predecessor = this.queue;
+    const snapshotPromise = Promise.resolve().then(async () => {
+      context.log('Preparing content snapshot.');
+      return this.dependencies.snapshot();
+    });
+    const run = (async () => {
+      let snapshot: PublishSnapshot | undefined;
+      let succeeded = false;
       try {
+        snapshot = await snapshotPromise;
+        job.contentHash = snapshot.contentHash;
+        this.setStatus(job, 'queued');
+        await predecessor;
         this.setStatus(job, 'validating');
         context.log('Validating content snapshot.');
         await this.dependencies.validate(snapshot, context);
@@ -94,26 +104,27 @@ export class PublishCoordinator {
         context.log('Switching the public release.');
         const switched = await this.dependencies.switchRelease(snapshot, build, context);
         job.releaseId = switched?.releaseId ?? build?.releaseId;
-        this.setStatus(job, 'succeeded');
         context.log(`Published ${job.releaseId ?? job.contentHash.slice(0, 12)}.`);
+        succeeded = true;
       } catch (error) {
         this.append(job, error instanceof Error ? error.stack ?? error.message : String(error));
-        this.setStatus(job, 'failed');
       } finally {
-        try {
-          await this.dependencies.cleanup(snapshot, context);
-        } catch (error) {
-          this.append(job, `Cleanup failed: ${String(error)}`);
+        if (snapshot) {
+          try {
+            await this.dependencies.cleanup(snapshot, context);
+          } catch (error) {
+            this.append(job, `Cleanup failed: ${String(error)}`);
+          }
         }
+        this.setStatus(job, succeeded ? 'succeeded' : 'failed');
       }
-    });
+    })();
 
     this.running.set(job.id, run);
     this.queue = run.catch(() => undefined);
     void run.finally(() => this.running.delete(job.id));
     return { ...job };
   }
-
   get(id: string): PublishJob | undefined {
     const job = this.jobs.get(id);
     return job ? { ...job } : undefined;

@@ -5,8 +5,9 @@ import { ErrorBlock, LoadingBlock, PageHeader, formatDate } from '../components/
 import { useApiResource } from '../hooks/useApiResource';
 import type { PublishJob } from '../types';
 
-const activeStatuses = new Set<PublishJob['status']>(['queued', 'validating', 'building', 'switching']);
+const activeStatuses = new Set<PublishJob['status']>(['preparing', 'queued', 'validating', 'building', 'switching']);
 const statusLabels: Record<PublishJob['status'], string> = {
+  preparing: '准备快照',
   queued: '等待中',
   validating: '内容检查',
   building: '构建站点',
@@ -90,13 +91,14 @@ export function PublishPage() {
   };
 
   const progress = useMemo(() => ({
+    preparing: 5,
     queued: 10,
     validating: 30,
     building: 65,
     switching: 88,
     succeeded: 100,
     failed: 100,
-  })[job?.status || 'queued'], [job]);
+  })[job?.status || 'preparing'], [job]);
 
   return (
     <div className="page-stack">
@@ -111,7 +113,7 @@ export function PublishPage() {
             disabled={publishing || Boolean(job && activeStatuses.has(job.status))}
             onClick={() => void startPublish()}
           >
-            {publishing ? '正在排队…' : '↗ 发布新版本'}
+            {publishing ? '正在创建任务…' : '↗ 发布新版本'}
           </button>
         )}
       />
@@ -134,8 +136,8 @@ export function PublishPage() {
         </div>
         <div className="release-progress"><span style={{ width: `${progress}%` }} /></div>
         <ol className="release-steps">
-          <li className={job ? 'done' : ''}><b>01</b>快照</li>
-          <li className={job && job.status !== 'queued' ? 'done' : ''}><b>02</b>校验</li>
+          <li className={job && job.status !== 'preparing' ? 'done' : ''}><b>01</b>快照</li>
+          <li className={job && !['preparing', 'queued'].includes(job.status) ? 'done' : ''}><b>02</b>校验</li>
           <li className={job && ['building', 'switching', 'succeeded'].includes(job.status) ? 'done' : ''}><b>03</b>构建</li>
           <li className={job?.status === 'succeeded' ? 'done' : ''}><b>04</b>切换</li>
         </ol>

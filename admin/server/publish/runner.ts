@@ -4,6 +4,7 @@ import type { Dirent } from 'node:fs';
 import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, resolve } from 'node:path';
 import sharp from 'sharp';
+import { scanClipReferences } from '../content/clips';
 import { createContentRepository } from '../content/repository';
 import { scanPostImageReferences } from '../content/images';
 import { compileRedirects } from '../redirects/service';
@@ -154,14 +155,25 @@ export async function validateContentRoot(options: {
       throw new Error(`Managed image dimensions exceed 2560px: ${image.path}`);
     }
   }
+  const referenceErrors: string[] = [];
+  const clipSlugs = new Set(clips.map((clip) => clip.slug));
   const imagePaths = new Set(images.map((image) => image.path));
   for (const post of posts) {
+    for (const slug of scanClipReferences(post.body)) {
+      if (!clipSlugs.has(slug)) {
+        referenceErrors.push(`Post ${post.slug} references a missing clip: ${slug}`);
+      }
+    }
     for (const reference of scanPostImageReferences(post)) {
       const path = localImagePath(reference.value);
       if (path && !imagePaths.has(path)) {
-        throw new Error(`Post ${post.slug} references a missing image: ${reference.value}`);
+        referenceErrors.push(`Post ${post.slug} references a missing image: ${reference.value}`);
       }
     }
+  }
+  if (referenceErrors.length) {
+    throw new Error(`Content reference validation failed:
+- ${referenceErrors.join('\n- ')}`);
   }
 
   const redirectsPath = resolve(contentRoot, 'redirects.json');

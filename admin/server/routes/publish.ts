@@ -76,6 +76,20 @@ export async function registerPublishRoutes(
     ) STRICT;
   `);
 
+  const interruptedMessage = 'Publish interrupted because the admin service restarted.';
+  const interruptedAt = new Date().toISOString();
+  database.prepare(`
+    UPDATE publish_job_state
+    SET status = 'failed',
+        log = CASE
+          WHEN log = '' THEN ? || char(10)
+          WHEN substr(log, -1) = char(10) THEN log || ? || char(10)
+          ELSE log || char(10) || ? || char(10)
+        END,
+        finished_at = ?
+    WHERE status IN ('preparing', 'queued', 'validating', 'building', 'switching')
+  `).run(interruptedMessage, interruptedMessage, interruptedMessage, interruptedAt);
+
   const coordinator = new PublishCoordinator({
     snapshot: async () => createBuildSnapshot({
       projectRoot: config.projectRoot,
@@ -180,11 +194,30 @@ export async function registerPublishRoutes(
       reply.raw.end(`event: publish\ndata: ${JSON.stringify(presentJob(current))}\n\n`);
       return;
     }
-    const unsubscribe = coordinator.subscribe(id, (job) => {
+    let closed = false;
+    let unsubscribe: (() => void) | undefined;
+    let unsubscribePending = false;
+    const dispose = () => {
+      if (closed) return;
+      closed = true;
+      if (unsubscribe) unsubscribe();
+      else unsubscribePending = true;
+    };
+    const finish = () => {
+      dispose();
+      if (!reply.raw.writableEnded && !reply.raw.destroyed) reply.raw.end();
+    };
+    reply.raw.once('error', dispose);
+    request.raw.once('close', dispose);
+    unsubscribe = coordinator.subscribe(id, (job) => {
+      if (closed || reply.raw.writableEnded || reply.raw.destroyed) {
+        dispose();
+        return;
+      }
       reply.raw.write(`event: publish\ndata: ${JSON.stringify(presentJob(job))}\n\n`);
-      if (terminalStatuses.has(job.status)) reply.raw.end();
+      if (terminalStatuses.has(job.status)) finish();
     });
-    request.raw.once('close', unsubscribe);
+    if (unsubscribePending) unsubscribe();
   });
 
   app.get('/api/logs', { schema: jsonSchema({ querystring: logListQuerySchema }) }, async (request) => {

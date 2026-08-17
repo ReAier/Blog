@@ -1,26 +1,34 @@
-﻿import type {
-  PageResult,
+import type {
   PostDocument,
   PostHistoryEntry,
   PostHistoryRevision,
+  PostPageResult,
   PostSaveInput,
-  PostSummary,
   PreviewResponse,
 } from '../types';
 import { endpoint, fileForm, queryString, request } from './transport';
 
+const manualHistoryHeaders = (historyGroup?: string) => historyGroup ? {
+  'X-History-Mode': 'manual',
+  'X-History-Group': historyGroup,
+} : undefined;
+
 export const postsApi = {
-  listPosts: (options: { query?: string; status?: string; page?: number; includeDeleted?: boolean } = {}) => (
-    request<PageResult<PostSummary>>(`/posts${queryString(options)}`)
+  listPosts: (options: { query?: string; status?: string; tags?: string; page?: number; includeDeleted?: boolean } = {}) => (
+    request<PostPageResult>(`/posts${queryString(options)}`)
   ),
   getPost: (slug: string) => request<PostDocument>(`/posts/${encodeURIComponent(slug)}`),
-  createPost: (input: PostSaveInput) => request<PostDocument>('/posts', { method: 'POST', body: input }),
+  createPost: (input: PostSaveInput, historyGroup?: string) => request<PostDocument>('/posts', {
+    method: 'POST',
+    body: input,
+    headers: manualHistoryHeaders(historyGroup),
+  }),
   savePost: (input: PostSaveInput, revision: string, historyGroup?: string) => (
     request<PostDocument>(`/posts/${encodeURIComponent(input.slug)}`, {
       method: 'PUT',
       body: input,
       revision,
-      headers: historyGroup ? { 'X-History-Group': historyGroup } : undefined,
+      headers: manualHistoryHeaders(historyGroup),
     })
   ),
   deletePost: (slug: string, revision: string) => request<PostDocument>(

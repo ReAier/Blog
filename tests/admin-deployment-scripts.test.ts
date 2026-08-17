@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 
 describe('deployment shell safety', () => {
-  it('keeps deployment shell scripts free of UTF-8 BOM bytes', async () => {
+  it('keeps deployment shell scripts in Unix-compatible UTF-8 format', async () => {
     for (const path of [
       'deployment/install-code.sh',
       'deployment/publish-worker.sh',
@@ -10,6 +10,7 @@ describe('deployment shell safety', () => {
     ]) {
       const bytes = await readFile(path);
       expect([...bytes.subarray(0, 3)]).not.toEqual([0xef, 0xbb, 0xbf]);
+      expect(bytes.includes(0x0d), `${path} must use LF line endings`).toBe(false);
     }
   });
   it('exposes SSH system upgrades without retaining the old deploy command', async () => {

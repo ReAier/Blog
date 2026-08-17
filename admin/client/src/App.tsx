@@ -1,4 +1,4 @@
-﻿import { Navigate, RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { Navigate, RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { useAuth } from './context/AuthContext';
 import { ConfirmDialogProvider } from './context/ConfirmDialogContext';
@@ -13,6 +13,7 @@ import { PostsPage } from './pages/PostsPage';
 import { PublishPage } from './pages/PublishPage';
 import { SecurityPage } from './pages/SecurityPage';
 import { SetupPage } from './pages/SetupPage';
+import { TrashPage } from './pages/TrashPage';
 
 function LoadingScreen({ label }: { label: string }) {
   return <div className="app-loading"><span className="edition-seal">编</span><p>{label}</p></div>;
@@ -58,6 +59,7 @@ const router = createBrowserRouter([
       { path: '/backups', element: <BackupsPage /> },
       { path: '/publish', element: <PublishPage /> },
       { path: '/security', element: <SecurityPage /> },
+      { path: '/trash', element: <TrashPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

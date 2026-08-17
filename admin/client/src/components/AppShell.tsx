@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AppearanceControls } from './AppearanceControls';
@@ -8,9 +8,7 @@ const navigation = [
   { to: '/posts', label: '文章' },
   { to: '/clips', label: '剪切板' },
   { to: '/images', label: '图片库' },
-  { to: '/backups', label: '备份' },
   { to: '/publish', label: '发布与日志', shortLabel: '发布' },
-  { to: '/security', label: 'API 与安全', shortLabel: '安全' },
 ];
 
 function NavItem({
@@ -38,14 +36,19 @@ function NavItem({
 
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const currentSection = navigation.find(
     (item) => item.to !== '/' && location.pathname.startsWith(item.to),
   )?.label ?? '工作台';
 
-  useEffect(() => setMenuOpen(false), [location.pathname]);
+  useEffect(() => {
+    setMenuOpen(false);
+    setSettingsOpen(false);
+  }, [location.pathname]);
   useEffect(() => {
     if (!menuOpen) return;
     const close = (event: KeyboardEvent) => {
@@ -54,6 +57,21 @@ export function AppShell() {
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
   }, [menuOpen]);
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSettingsOpen(false);
+    };
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!settingsRef.current?.contains(event.target as Node)) setSettingsOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    return () => {
+      window.removeEventListener('keydown', closeOnEscape);
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+    };
+  }, [settingsOpen]);
 
   const handleLogout = async () => {
     await logout();
@@ -82,17 +100,32 @@ export function AppShell() {
             {navigation.map((item) => <NavItem key={item.to} {...item} />)}
           </nav>
           <div className="admin-utilities">
-            <span className="admin-context" aria-label={`当前位置：${currentSection}`}>{currentSection}</span>
+            <span className="admin-context" aria-label={'当前位置：' + currentSection}>{currentSection}</span>
             <AppearanceControls />
-            <div className="account-menu">
-              <div className="account-copy">
-                <strong>{user?.displayName || user?.username}</strong>
-                <span>责任编辑</span>
-              </div>
-              <span className="avatar" aria-hidden="true">
-                {(user?.displayName || user?.username || 'A').slice(0, 1).toUpperCase()}
-              </span>
-              <button className="text-button" type="button" onClick={handleLogout}>退出</button>
+            <div className="settings-control" ref={settingsRef}>
+              <button
+                className="settings-trigger"
+                type="button"
+                aria-label="设置"
+                aria-expanded={settingsOpen}
+                aria-controls="admin-settings-menu"
+                onClick={() => setSettingsOpen((value) => !value)}
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+                  <path d="m19.4 15 .1.1a1.8 1.8 0 0 1-2.5 2.5l-.1-.1a1.8 1.8 0 0 0-3 .9v.2a1.8 1.8 0 0 1-3.6 0v-.2a1.8 1.8 0 0 0-3-.9l-.1.1a1.8 1.8 0 1 1-2.5-2.5l.1-.1a1.8 1.8 0 0 0-.9-3h-.2a1.8 1.8 0 0 1 0-3h.2a1.8 1.8 0 0 0 .9-3l-.1-.1a1.8 1.8 0 1 1 2.5-2.5l.1.1a1.8 1.8 0 0 0 3-.9v-.2a1.8 1.8 0 0 1 3.6 0v.2a1.8 1.8 0 0 0 3 .9l.1-.1a1.8 1.8 0 1 1 2.5 2.5l-.1.1a1.8 1.8 0 0 0 .9 3h.2a1.8 1.8 0 0 1 0 3h-.2a1.8 1.8 0 0 0-.9 3Z" />
+                </svg>
+                <span>设置</span>
+              </button>
+              {settingsOpen && (
+                <nav id="admin-settings-menu" className="settings-menu" aria-label="设置菜单">
+                  <NavLink to="/trash" className={({ isActive }) => 'settings-menu-item' + (isActive ? ' is-active' : '')}>回收站</NavLink>
+                  <NavLink to="/backups" className={({ isActive }) => 'settings-menu-item' + (isActive ? ' is-active' : '')}>备份</NavLink>
+                  <NavLink to="/security" className={({ isActive }) => 'settings-menu-item' + (isActive ? ' is-active' : '')}>API 与安全</NavLink>
+                  <div className="settings-menu-divider" aria-hidden="true" />
+                  <button className="settings-menu-item settings-menu-logout" type="button" onClick={handleLogout}>退出登录</button>
+                </nav>
+              )}
             </div>
           </div>
         </div>

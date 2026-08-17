@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { EditorState, type Extension } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers } from '@codemirror/view';
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { cpp } from '@codemirror/lang-cpp';
 import { javascript } from '@codemirror/lang-javascript';
 import { markdown } from '@codemirror/lang-markdown';
@@ -49,6 +49,7 @@ interface MarkdownEditorProps {
   onChange: (value: string) => void;
   onSave?: () => void;
   onReady?: (handle: MarkdownEditorHandle | null) => void;
+  indentOnTab?: boolean;
   ariaLabel?: string;
   language?: string;
   extensions?: Extension[];
@@ -59,6 +60,7 @@ export function MarkdownEditor({
   onChange,
   onSave,
   onReady,
+  indentOnTab = false,
   ariaLabel = 'Markdown 正文编辑器',
   language,
   extensions = defaultExtensions,
@@ -87,14 +89,7 @@ export function MarkdownEditor({
           codeLanguageExtension(language),
           syntaxHighlighting(adminHighlightStyle),
           keymap.of([
-            {
-              key: 'Mod-s',
-              preventDefault: true,
-              run: () => {
-                onSaveRef.current?.();
-                return true;
-              },
-            },
+            ...(indentOnTab ? [indentWithTab] : []),
             ...defaultKeymap,
             ...historyKeymap,
           ]),
@@ -169,7 +164,7 @@ export function MarkdownEditor({
       editor.destroy();
       view.current = null;
     };
-  }, [ariaLabel, extensions, language]);
+  }, [ariaLabel, extensions, indentOnTab, language]);
 
   useEffect(() => {
     const editor = view.current;

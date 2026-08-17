@@ -105,6 +105,55 @@ describe('managed images', () => {
 });
 
 describe('publish coordinator', () => {
+  it('creates a preparing job before the content snapshot finishes', async () => {
+    let resolveSnapshot!: (snapshot: { workspace: string; contentHash: string }) => void;
+    const snapshot = new Promise<{ workspace: string; contentHash: string }>((resolveSnapshotPromise) => {
+      resolveSnapshot = resolveSnapshotPromise;
+    });
+    const coordinator = new PublishCoordinator({
+      snapshot: () => snapshot,
+      validate: async () => undefined,
+      build: async () => undefined,
+      switchRelease: async () => undefined,
+      cleanup: async () => undefined,
+    });
+
+    const publishResult = coordinator.publish();
+    const earlyResult = await Promise.race([
+      publishResult.then((job) => ({ kind: 'job' as const, job })),
+      new Promise<{ kind: 'timeout' }>((resolveRace) => {
+        setTimeout(() => resolveRace({ kind: 'timeout' }), 0);
+      }),
+    ]);
+    resolveSnapshot({ workspace: 'snapshot', contentHash: 'abc123' });
+    const job = await publishResult;
+
+    expect(earlyResult).toMatchObject({ kind: 'job', job: { status: 'preparing' } });
+    expect(job.status).toBe('preparing');
+    await coordinator.wait(job.id);
+    expect(coordinator.get(job.id)).toMatchObject({ status: 'succeeded', contentHash: 'abc123' });
+  });
+  it('emits the completed publish log before the terminal success event', async () => {
+    const coordinator = new PublishCoordinator({
+      snapshot: async () => ({ workspace: 'snapshot', contentHash: 'abc123' }),
+      validate: async () => undefined,
+      build: async () => ({ releaseId: 'release-1' }),
+      switchRelease: async (_snapshot, build) => build,
+      cleanup: async () => undefined,
+    });
+
+    const job = await coordinator.publish();
+    const events: Array<{ status: string; log: string }> = [];
+    coordinator.subscribe(job.id, (next) => events.push({ status: next.status, log: next.log }));
+    await coordinator.wait(job.id);
+
+    expect(events.at(-1)).toMatchObject({
+      status: 'succeeded',
+      log: expect.stringContaining('Published release-1.'),
+    });
+    expect(events.findIndex((event) => event.status === 'succeeded')).toBe(events.length - 1);
+  });
+
   it('serializes full builds and never switches a failed build', async () => {
     const events: string[] = [];
     const coordinator = new PublishCoordinator({

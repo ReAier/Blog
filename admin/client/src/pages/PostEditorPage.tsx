@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiConflictError } from '../api/client';
 import { useConfirmDialog } from '../context/ConfirmDialogContext';
@@ -9,8 +9,8 @@ import { CoverPickerDialog, TagPickerDialog } from '../components/PostMetadataPi
 import { ErrorBlock, LoadingBlock, formatDate } from '../components/ui';
 import { useAutosave } from '../hooks/useAutosave';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
-import { automaticClipSlug, automaticPostSlug, todayInShanghai } from '../lib/content-defaults';
-import { createImageMarkdown } from '../lib/editor-actions';
+import { automaticPostSlug, todayInShanghai } from '../lib/content-defaults';
+import { createImageMarkdown, imageAssetMatchesPath } from '../lib/editor-actions';
 import { reconcileSavedDraft } from '../lib/save-reconciliation';
 import type {
   ClipSummary,
@@ -29,14 +29,6 @@ const emptyFrontmatter: PostFrontmatter = {
   tags: [],
   draft: true,
   featured: false,
-};
-
-const emptyNewClip = {
-  title: '',
-  description: '',
-  language: 'typescript',
-  file: '',
-  code: '',
 };
 
 function postToInput(post: PostDocument): PostSaveInput {
@@ -72,6 +64,7 @@ export function PostEditorPage() {
     body: '',
   });
   const [revision, setRevision] = useState('');
+  const [loadBaselineKey, setLoadBaselineKey] = useState(isNew ? 'new' : '');
   const [loaded, setLoaded] = useState(isNew);
   const [loadError, setLoadError] = useState<string>();
   const [message, setMessage] = useState<string>();
@@ -89,8 +82,11 @@ export function PostEditorPage() {
   const [historyRevision, setHistoryRevision] = useState<PostHistoryRevision>();
   const [historyBusy, setHistoryBusy] = useState(false);
   const [resourceBusy, setResourceBusy] = useState(false);
+  const [clipInsertBusy, setClipInsertBusy] = useState(false);
   const [preview, setPreview] = useState('');
-  const [newClip, setNewClip] = useState(emptyNewClip);
+  const [clipQuery, setClipQuery] = useState('');
+  const [imageQuery, setImageQuery] = useState('');
+  const clipInsertOffsetRef = useRef<number | null>(null);
   const historyGroupRef = useRef<string | undefined>(undefined);
   const draftRef = useRef(draft);
   const revisionRef = useRef(revision);
@@ -114,11 +110,26 @@ export function PostEditorPage() {
         setDraft(postToInput(post));
         revisionRef.current = post.revision;
         setRevision(post.revision);
+        setLoadBaselineKey(post.revision);
         persistedSlugRef.current = post.slug;
         setLoaded(true);
+        void api.listImages().then((result) => setImages(result.items)).catch(() => undefined);
       })
       .catch((reason) => setLoadError(reason instanceof Error ? reason.message : '文章加载失败'));
   }, [isNew, slug]);
+
+  const draftFingerprint = useCallback((value: PostSaveInput = draftRef.current) => JSON.stringify({
+    body: value.body,
+    frontmatter: {
+      title: value.frontmatter.title,
+      description: value.frontmatter.description,
+      publishedAt: value.frontmatter.publishedAt,
+      tags: value.frontmatter.tags,
+      draft: value.frontmatter.draft,
+      featured: value.frontmatter.featured,
+      cover: value.frontmatter.cover,
+    },
+  }), []);
 
   const persistDraft = useCallback(async (historyGroup?: string) => {
     const draftSnapshot = draftRef.current;
@@ -134,7 +145,7 @@ export function PostEditorPage() {
     try {
       const saved = persistedSlug
         ? await api.savePost(payload, revisionRef.current, historyGroup)
-        : await api.createPost(payload);
+        : await api.createPost(payload, historyGroup);
       const normalized = postToInput(saved);
       revisionRef.current = saved.revision;
       persistedSlugRef.current = saved.slug;
@@ -146,7 +157,7 @@ export function PostEditorPage() {
         equalDraft,
       ));
       setConflict(undefined);
-      if (!persistedSlug) navigate(`/posts/${encodeURIComponent(saved.slug)}`, { replace: true });
+      if (!persistedSlug) navigateWithoutPrompt(`/posts/${encodeURIComponent(saved.slug)}`, { replace: true });
       return saved;
     } catch (reason) {
       if (reason instanceof ApiConflictError) {
@@ -154,20 +165,24 @@ export function PostEditorPage() {
       }
       throw reason;
     }
-  }, [navigateWithoutPrompt]);
+  }, [draftFingerprint, navigateWithoutPrompt]);
 
   const save = useCallback(async () => {
     const historyGroup = historyGroupRef.current;
     historyGroupRef.current = undefined;
-    await persistDraft(historyGroup);
-  }, [persistDraft]);
+    const saved = await persistDraft(historyGroup);
+    return draftFingerprint(postToInput(saved));
+  }, [draftFingerprint, persistDraft]);
 
   const { state: saveState, error: saveError, saveNow } = useAutosave(
     save,
     [draft],
-    2000,
+    800,
     loaded && Boolean(draft.frontmatter.title && draft.frontmatter.description),
-  );  const confirmUnsavedNavigation = useCallback(() => confirmAction({
+    () => draftFingerprint(draft),
+    loadBaselineKey,
+  );
+  const confirmUnsavedNavigation = useCallback(() => confirmAction({
     eyebrow: 'Unsaved changes',
     title: '离开并放弃未保存的修改？',
     message: saveState === 'error'
@@ -211,8 +226,19 @@ export function PostEditorPage() {
 
 
   const openClipPicker = async () => {
-    if (!clips.length) setClips((await api.listClips()).items);
-    setShowClipPicker(true);
+    if (!editor) {
+      setMessage('正文编辑器尚未就绪，请稍后重试。');
+      return;
+    }
+    clipInsertOffsetRef.current = editor.getSelectionOffset();
+    setMessage(undefined);
+    try {
+      if (!clips.length) setClips((await api.listClips()).items);
+      setShowClipPicker(true);
+    } catch (reason) {
+      clipInsertOffsetRef.current = null;
+      setMessage(reason instanceof Error ? reason.message : 'Clip 列表加载失败');
+    }
   };
 
   const openImagePicker = async () => {
@@ -247,63 +273,47 @@ export function PostEditorPage() {
     }
   };
 
-  const insertExistingClip = async (clipSlug: string) => {
-    setResourceBusy(true);
+  const insertExistingClip = async (clip: ClipSummary) => {
+    const insertOffset = clipInsertOffsetRef.current;
+    if (insertOffset === null) {
+      setMessage('无法确定 Clip 插入位置，请关闭窗口后重试。');
+      return;
+    }
+
+    setClipInsertBusy(true);
     setMessage(undefined);
     try {
-      const insertOffset = editor?.getSelectionOffset() ?? draft.body.length;
       const savedPost = await persistDraft(`resource-${crypto.randomUUID()}`);
-      await api.attachClipToPost(savedPost.slug, clipSlug, savedPost.revision, insertOffset);
-      const refreshed = await api.getPost(savedPost.slug);
-      setDraft(postToInput(refreshed));
-      setRevision(refreshed.revision);
+      const updated = await api.attachClipToPost(
+        savedPost.slug,
+        clip.slug,
+        savedPost.revision,
+        insertOffset,
+      );
+      setDraft(postToInput(updated));
+      revisionRef.current = updated.revision;
+      setRevision(updated.revision);
+      setLoadBaselineKey(updated.revision);
+      clipInsertOffsetRef.current = null;
       setShowClipPicker(false);
-      setMessage('已插入可复用 Clip 引用。');
+      setClipQuery('');
+      setMessage(`已插入 Clip：${clip.file}`);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : '插入 Clip 失败');
     } finally {
-      setResourceBusy(false);
+      setClipInsertBusy(false);
     }
   };
 
-  const createClipAtCursor = async () => {
-    if (!newClip.title.trim() || !newClip.file.trim() || !newClip.language.trim()) {
-      setMessage('请填写 Clip 标题、文件名和语言。');
-      return;
-    }
-    const derivedSlug = automaticClipSlug(newClip.file);
-    if (!derivedSlug) {
-      setMessage('源文件名无法生成有效 slug。');
-      return;
-    }
-    const insertOffset = editor?.getSelectionOffset() ?? draft.body.length;
-    setResourceBusy(true);
-    setMessage(undefined);
-    try {
-      const savedPost = await persistDraft(`resource-${crypto.randomUUID()}`);
-      const created = await api.createClip({
-        slug: derivedSlug,
-        title: newClip.title.trim(),
-        description: newClip.description.trim(),
-        language: newClip.language.trim(),
-        file: newClip.file.trim(),
-        createdAt: todayInShanghai(),
-        code: newClip.code,
-      });
-      await api.attachClipToPost(savedPost.slug, created.slug, savedPost.revision, insertOffset);
-      const refreshed = await api.getPost(savedPost.slug);
-      setDraft(postToInput(refreshed));
-      setRevision(refreshed.revision);
-      setClips((current) => [created, ...current]);
-      setNewClip(emptyNewClip);
-      setShowClipPicker(false);
-      setMessage(`已创建并插入 Clip：${created.file}`);
-    } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : '创建 Clip 失败');
-    } finally {
-      setResourceBusy(false);
-    }
-  };
+  const filteredClips = useMemo(() => {
+    const search = clipQuery.trim().toLocaleLowerCase();
+    return search ? clips.filter((clip) => clip.file.toLocaleLowerCase().includes(search)) : clips;
+  }, [clipQuery, clips]);
+
+  const filteredImages = useMemo(() => {
+    const search = imageQuery.trim().toLocaleLowerCase();
+    return search ? images.filter((image) => (image.originalName || image.name).toLocaleLowerCase().includes(search)) : images;
+  }, [imageQuery, images]);
 
   const uploadImage = async (file?: File) => {
     if (!file) return;
@@ -326,7 +336,8 @@ export function PostEditorPage() {
     setShowHistory(true);
     setHistoryRevision(undefined);
     try {
-      setHistoryEntries(await api.listPostHistory(draft.slug));
+      const entries = await api.listPostHistory(draft.slug);
+      setHistoryEntries(entries.filter((entry) => !entry.groupId.startsWith('autosave-')));
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : '历史记录加载失败');
     } finally {
@@ -348,20 +359,22 @@ export function PostEditorPage() {
     const accepted = await confirmAction({
       eyebrow: 'Restore revision',
       title: `恢复历史版本 #${historyRevision.revisionNumber}？`,
-      message: '当前内容会先保存到历史记录，再恢复所选版本。',
+      message: '当前未手动保存的修改将被所选版本覆盖。',
       confirmLabel: '确认恢复',
     });
     if (!accepted) return;
     setHistoryBusy(true);
     try {
-      const current = await persistDraft(`before-restore-${crypto.randomUUID()}`);
+      const current = await persistDraft();
       const restored = await api.restorePostHistory(
         current.slug,
         historyRevision.revisionNumber,
         current.revision,
       );
       setDraft(postToInput(restored));
+      revisionRef.current = restored.revision;
       setRevision(restored.revision);
+      setLoadBaselineKey(restored.revision);
       setShowHistory(false);
       setMessage(`已恢复历史版本 #${historyRevision.revisionNumber}`);
     } catch (reason) {
@@ -383,7 +396,7 @@ export function PostEditorPage() {
     if (!accepted) return;
     setResourceBusy(true);
     try {
-      const current = await persistDraft(`before-delete-${crypto.randomUUID()}`);
+      const current = await persistDraft();
       await api.deletePost(current.slug, current.revision);
       navigateWithoutPrompt('/posts', { replace: true });
     } catch (reason) {
@@ -420,16 +433,15 @@ export function PostEditorPage() {
           <strong>{isNew ? '新稿' : draft.frontmatter.title || draft.slug}</strong>
         </div>
         <div className="save-cluster" aria-live="polite">
-          <span className={`save-state state-${saveState}`}><i />{{
-            idle: '尚未修改',
-            dirty: '等待自动保存',
+          {saveState !== 'idle' && <span className={`save-state state-${saveState}`}><i />{{
+            dirty: '未保存',
             saving: '正在保存',
             saved: '已保存',
             error: saveError || '保存失败',
-          }[saveState]}</span>
+          }[saveState]}</span>}
           {!isNew && <a className="secondary-button" href={api.postDownloadUrl(draft.slug)}>下载 .md</a>}
           {!isNew && <button className="secondary-button" type="button" onClick={() => void openHistoryDialog()}>历史</button>}
-          <button className="secondary-button" type="button" onClick={() => void manualSave()} disabled={saveState === 'saving'}>保存 <kbd>Ctrl S</kbd></button>
+          <button className="secondary-button" type="button" onClick={() => void manualSave()} disabled={saveState === 'saving'}>保存</button>
         </div>
       </header>
 
@@ -450,14 +462,14 @@ export function PostEditorPage() {
             <label className="field post-summary-field"><span>摘要</span><textarea rows={2} value={draft.frontmatter.description} onChange={(event) => updateFrontmatter('description', event.target.value)} required /><small>{draft.frontmatter.description.length} / 180</small></label>
             <div className="field post-date-field"><span>发布日期</span><BlogDateField ariaLabel="发布日期" value={draft.frontmatter.publishedAt} onChange={(value) => updateFrontmatter('publishedAt', value)} required /></div>
             <div className="field tag-control post-tags-field"><span>标签</span><div className="selected-tags">{draft.frontmatter.tags.length ? draft.frontmatter.tags.map((tag) => <button type="button" key={tag} title={`移除 ${tag}`} onClick={() => updateFrontmatter('tags', draft.frontmatter.tags.filter((item) => item !== tag))}>{tag} ×</button>) : <small>尚未选择标签</small>}</div><button className="secondary-button compact-action" type="button" disabled={resourceBusy} onClick={() => void openTagPicker()}>管理标签</button></div>
-            <div className="field cover-control post-cover-field"><span>封面</span>{draft.frontmatter.cover ? <div className="cover-preview">{images.find((image) => image.markdownPath === draft.frontmatter.cover) && <img src={images.find((image) => image.markdownPath === draft.frontmatter.cover)?.url} alt="" />}<code>{draft.frontmatter.cover}</code></div> : <small>尚未选择封面</small>}<div className="field-actions"><button className="secondary-button compact-action" type="button" disabled={resourceBusy} onClick={() => void openCoverPicker()}>{draft.frontmatter.cover ? '更换封面' : '选择封面'}</button>{draft.frontmatter.cover && <button className="danger-text" type="button" onClick={() => updateFrontmatter('cover', undefined)}>清除</button>}</div></div>
+            <div className="field cover-control post-cover-field"><span>封面</span>{draft.frontmatter.cover ? <div className="cover-preview">{images.find((image) => imageAssetMatchesPath(image, draft.frontmatter.cover)) && <img src={images.find((image) => imageAssetMatchesPath(image, draft.frontmatter.cover))?.url} alt="" />}<code>{draft.frontmatter.cover}</code></div> : <small>尚未选择封面</small>}<div className="field-actions"><button className="secondary-button compact-action" type="button" disabled={resourceBusy} onClick={() => void openCoverPicker()}>{draft.frontmatter.cover ? '更换封面' : '选择封面'}</button>{draft.frontmatter.cover && <button className="danger-text" type="button" onClick={() => updateFrontmatter('cover', undefined)}>清除</button>}</div></div>
             <div className="switch-stack"><label className="switch-row"><span><strong>草稿</strong></span><input type="checkbox" checked={draft.frontmatter.draft} onChange={(event) => updateFrontmatter('draft', event.target.checked)} /></label><label className="switch-row"><span><strong>首页精选</strong></span><input type="checkbox" checked={draft.frontmatter.featured} onChange={(event) => updateFrontmatter('featured', event.target.checked)} /></label></div>
             {!isNew && <div className="editor-actions"><button className="danger-text" type="button" onClick={() => void deletePost()} disabled={resourceBusy}>移入回收站</button></div>}
           </div>
         </aside>
 
         <section className="writing-panel" aria-labelledby="writing-heading">
-          <header className="writing-toolbar"><div><span>02 · Manuscript</span><h2 id="writing-heading">正文</h2></div><div className="insert-actions"><button type="button" onClick={() => void openClipPicker()}>＋ 新建 Clip</button><button type="button" onClick={() => void openImagePicker()}>＋ 图片素材</button></div></header>
+          <header className="writing-toolbar"><div><span>02 · Manuscript</span><h2 id="writing-heading">正文</h2></div><div className="insert-actions"><button type="button" onClick={() => void openClipPicker()}>＋ 插入 Clip</button><button type="button" onClick={() => void openImagePicker()}>＋ 图片素材</button></div></header>
           <MarkdownEditor value={draft.body} onChange={(body) => setDraft((current) => ({ ...current, body }))} onSave={() => void manualSave()} onReady={setEditor} />
           <footer className="editor-foot"><span>{draft.body.trim() ? draft.body.trim().split(/\s+/).length : 0} 词</span><span>{draft.body.length} 字符</span><span>Markdown</span></footer>
         </section>
@@ -469,22 +481,34 @@ export function PostEditorPage() {
       </div>
 
       {showClipPicker && (
-        <PickerDialog title="在光标位置创建 Clip" onClose={() => setShowClipPicker(false)}>
-          <div className="resource-form">
-            <label className="field post-title-field"><span>标题</span><input value={newClip.title} onChange={(event) => setNewClip((current) => ({ ...current, title: event.target.value }))} /></label>
-            <div className="field-pair"><label className="field"><span>源文件名</span><input value={newClip.file} placeholder="example.ts" onChange={(event) => setNewClip((current) => ({ ...current, file: event.target.value.replace(/[\\/]/g, '') }))} /></label><label className="field"><span>语言</span><input value={newClip.language} onChange={(event) => setNewClip((current) => ({ ...current, language: event.target.value }))} /></label></div>
-            <label className="field"><span>描述</span><input value={newClip.description} onChange={(event) => setNewClip((current) => ({ ...current, description: event.target.value }))} /></label>
-            <label className="field"><span>源码</span><textarea rows={9} value={newClip.code} onChange={(event) => setNewClip((current) => ({ ...current, code: event.target.value }))} /></label>
-            <button className="primary-button" type="button" disabled={resourceBusy} onClick={() => void createClipAtCursor()}>{resourceBusy ? '正在创建…' : '创建源码并插入围栏'}</button>
-          </div>
-          {!!clips.length && <div className="resource-index"><span>复用已有 Clip</span>{clips.slice(0, 12).map((clip) => <button type="button" key={clip.slug} disabled={resourceBusy} onClick={() => void insertExistingClip(clip.slug)}>{clip.title}<small>{clip.file} · {clip.references.length} 篇引用</small></button>)}</div>}
+        <PickerDialog
+          title="在光标位置插入 Clip"
+          busy={clipInsertBusy}
+          onClose={() => {
+            if (clipInsertBusy) return;
+            clipInsertOffsetRef.current = null;
+            setShowClipPicker(false);
+            setClipQuery('');
+          }}
+        >
+          <label className="search-field picker-search-field">
+            <span aria-hidden="true">⌕</span>
+            <span className="sr-only">按文件名搜索 Clip</span>
+            <input type="search" placeholder="按文件名搜索 Clip" value={clipQuery} onChange={(event) => setClipQuery(event.target.value)} />
+          </label>
+          {!filteredClips.length ? <p className="empty-inline">没有匹配的 Clip 文件。</p> : (
+            <div className="resource-index clip-reuse-index">
+              {filteredClips.map((clip) => <button type="button" key={clip.slug} disabled={clipInsertBusy} onClick={() => void insertExistingClip(clip)}><strong>{clip.title}</strong><small><code>{clip.file}</code> · {clip.language}</small></button>)}
+            </div>
+          )}
         </PickerDialog>
       )}
 
       {showImagePicker && (
-        <PickerDialog title="图片素材" onClose={() => setShowImagePicker(false)}>
+        <PickerDialog title="图片素材" onClose={() => { setShowImagePicker(false); setImageQuery(''); }}>
           <label className="upload-strip"><input type="file" accept="image/jpeg,image/png,image/webp" disabled={resourceBusy} onChange={(event) => void uploadImage(event.target.files?.[0])} /><span>{resourceBusy ? '正在处理图片…' : '上传 JPEG / PNG / WebP（自动转 WebP）'}</span></label>
-          {!images.length ? <p className="empty-inline">图片库还是空的。</p> : images.map((image) => <div className="picker-item image-picker-item" key={image.id}><img src={image.url} alt="" /><span><strong>{image.originalName || image.name}</strong><small>{image.width} × {image.height}</small></span><div className="picker-actions"><button type="button" onClick={() => { editor?.insertText(createImageMarkdown({ alt: image.originalName || image.name, path: image.markdownPath || image.url })); setShowImagePicker(false); }}>插入正文</button><button type="button" onClick={() => { updateFrontmatter('cover', image.markdownPath || image.url); setShowImagePicker(false); }}>设为封面</button></div></div>)}
+          <label className="search-field picker-search-field"><span aria-hidden="true">⌕</span><span className="sr-only">按文件名搜索图片</span><input type="search" placeholder="按文件名搜索图片" value={imageQuery} onChange={(event) => setImageQuery(event.target.value)} /></label>
+          {!filteredImages.length ? <p className="empty-inline">没有匹配的图片。</p> : filteredImages.map((image) => <div className="picker-item image-picker-item" key={image.id}><img src={image.url} alt="" /><span><strong>{image.originalName || image.name}</strong><small>{image.width} × {image.height}</small></span><div className="picker-actions"><button type="button" onClick={() => { editor?.insertText(createImageMarkdown({ alt: image.originalName || image.name, path: image.markdownPath || image.url })); setShowImagePicker(false); setImageQuery(''); }}>插入正文</button><button type="button" onClick={() => { updateFrontmatter('cover', image.markdownPath || image.url); setShowImagePicker(false); setImageQuery(''); }}>设为封面</button></div></div>)}
         </PickerDialog>
       )}
 
@@ -515,7 +539,7 @@ export function PostEditorPage() {
               {historyBusy && !historyEntries.length ? <LoadingBlock label="正在读取历史…" /> : historyEntries.map((entry) => <button type="button" className={historyRevision?.revisionNumber === entry.revisionNumber ? 'is-active' : ''} key={entry.revisionNumber} onClick={() => void inspectHistory(entry)}><strong>#{entry.revisionNumber}</strong><span>{formatDate(new Date(entry.createdAt).toISOString())}</span><small>{entry.groupId}</small></button>)}
             </aside>
             <section className="history-compare">
-              {historyRevision ? <><header><div><strong>历史原文件 #{historyRevision.revisionNumber}</strong><span>与当前编辑正文并排核对</span></div><button className="primary-button" type="button" disabled={historyBusy} onClick={() => void restoreHistory()}>恢复此版本</button></header><div className="compare-columns"><article><h3>当前正文</h3><pre>{draft.body}</pre></article><article><h3>历史 Markdown</h3><pre>{historyRevision.content}</pre></article></div></> : <p className="empty-inline">选择一个版本查看差异并恢复。</p>}
+              {historyRevision ? <><header><div><strong>历史原文件 #{historyRevision.revisionNumber}</strong><span>与当前编辑正文并排核对</span></div><button className="primary-button" type="button" disabled={historyBusy} onClick={() => void restoreHistory()}>恢复</button></header><div className="compare-columns"><article><h3>当前正文</h3><pre>{draft.body}</pre></article><article><h3>历史正文</h3><pre>{historyRevision.body}</pre></article></div></> : <p className="empty-inline">选择一个版本查看差异并恢复。</p>}
             </section>
           </div>
         </PickerDialog>
@@ -529,21 +553,25 @@ function PickerDialog({
   onClose,
   children,
   wide = false,
+  busy = false,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   wide?: boolean;
+  busy?: boolean;
 }) {
   return (
     <Dialog
-      className={wide ? 'is-wide' : ''}
+      className={wide ? 'is-wide history-dialog' : ''}
       ariaLabelledBy="picker-title"
+      closeOnBackdrop={!busy}
+      closeOnEscape={!busy}
       onClose={onClose}
     >
       <header>
         <h2 id="picker-title">{title}</h2>
-        <button type="button" aria-label="关闭" onClick={onClose}>×</button>
+        <button type="button" aria-label="关闭" disabled={busy} onClick={onClose}>×</button>
       </header>
       <div className="picker-list">{children}</div>
     </Dialog>

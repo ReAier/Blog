@@ -7,7 +7,6 @@ import type {
   ContentMutationOptions,
 } from '../../shared/content-types';
 import {
-  ContentConflictError,
   ContentDuplicateError,
   ContentNotFoundError,
   ContentValidationError,
@@ -337,11 +336,6 @@ export async function listClips(root: string): Promise<ClipDocument[]> {
   const registrySlugs = new Set(registry.map((clip) => clip.slug));
   const legacy = (await loadLegacy(root, posts, references)).filter((clip) => !registrySlugs.has(clip.slug));
   const all = [...registry, ...legacy].sort((left, right) => left.slug.localeCompare(right.slug));
-  const available = new Set(all.map((clip) => clip.slug));
-  const missing = [...references.keys()].filter((slug) => !available.has(slug));
-  if (missing.length) {
-    throw new ContentNotFoundError(`Missing clip references: ${missing.join(', ')}`, { slugs: missing });
-  }
   return all;
 }
 
@@ -414,13 +408,7 @@ export async function updateClipCode(
 }
 
 export async function deleteClip(root: string, slug: string): Promise<void> {
-  const clip = await readClip(root, slug);
-  if (clip.references.length) {
-    throw new ContentConflictError('Clip is still referenced by content.', {
-      slug,
-      references: clip.references,
-    });
-  }
+  await readClip(root, slug);
   const directory = resolveContentPath(root, 'clips', slug);
   if (!await directoryExists(directory)) {
     throw new ContentValidationError('Legacy clips must be migrated before deletion.', { slug });

@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DatabaseSync } from 'node:sqlite';
 import type { AdminConfig } from '../config';
 import { ContentConflictError, ContentValidationError } from '../content/errors';
-import { parseImportedPostMarkdown, serializePostMarkdown } from '../content/markdown';
+import { parseImportedPostMarkdown, parsePostMarkdown, serializePostMarkdown } from '../content/markdown';
 import { withContentOperation } from '../content/operation-log';
 import { resolveContentPath } from '../content/paths';
 import type { ContentRepository } from '../content/repository';
@@ -50,43 +50,60 @@ export async function registerPostRoutes(
   const { config, repository, history } = dependencies;
   const markdownLimit = () => configuredUploadLimit('BLOG_MAX_MARKDOWN_BYTES', MAX_MARKDOWN_BYTES);
 
+  const headerValue = (request: FastifyRequest, name: string) => {
+    const value = request.headers[name];
+    return Array.isArray(value) ? value[0] : value;
+  };
   const recordHistory = async (
     post: ReturnType<typeof postFromEditorInput>,
     request: FastifyRequest,
     groupPrefix: string,
+  ) => history.record({
+    contentPath: `blog/${post.slug}.md`,
+    content: serializePostMarkdown(post),
+    groupId: headerValue(request, 'x-history-group') || `${groupPrefix}-${Date.now()}`,
+    adminId: adminAuth(request).sessionId ? adminAuth(request).adminId : undefined,
+  });
+  const recordManualEditorHistory = async (
+    post: ReturnType<typeof postFromEditorInput>,
+    request: FastifyRequest,
   ) => {
-    const groupHeader = request.headers['x-history-group'];
-    const group = Array.isArray(groupHeader) ? groupHeader[0] : groupHeader;
-    const autosaveGroup = `autosave-${post.slug}-${Math.floor(Date.now() / 60_000)}`;
-    return history.record({
-      contentPath: `blog/${post.slug}.md`,
-      content: serializePostMarkdown(post),
-      groupId: group || (groupPrefix === 'save' ? autosaveGroup : `${groupPrefix}-${Date.now()}`),
-      adminId: adminAuth(request).sessionId ? adminAuth(request).adminId : undefined,
-    });
+    if (headerValue(request, 'x-history-mode') !== 'manual') return;
+    await recordHistory(post, request, 'manual');
   };
 
   app.get('/api/posts', { schema: jsonSchema({ querystring: postListQuerySchema }) }, async (request) => {
     const query = request.query as {
       query?: string;
       status?: string;
+      tags?: string;
       page?: string;
       includeDeleted?: string;
     };
-    let posts = await repository.listPosts({ includeDeleted: query.includeDeleted === 'true' });
+    const allPosts = await repository.listPosts({ includeDeleted: true });
+    const counts = {
+      all: allPosts.filter((post) => !post.deleted).length,
+      published: allPosts.filter((post) => !post.deleted && !post.draft).length,
+      drafts: allPosts.filter((post) => !post.deleted && post.draft).length,
+      deleted: allPosts.filter((post) => post.deleted).length,
+    };
+    let posts = query.includeDeleted === 'true'
+      ? allPosts
+      : allPosts.filter((post) => !post.deleted);
     const search = query.query?.trim().toLowerCase();
     if (search) {
-      posts = posts.filter((post) => [post.slug, post.title, post.description, ...post.tags]
-        .some((value) => value.toLowerCase().includes(search)));
+      posts = posts.filter((post) => post.title.toLowerCase().includes(search));
     }
+    const tags = query.tags?.split(',').map((tag) => tag.trim()).filter(Boolean) ?? [];
+    if (tags.length) posts = posts.filter((post) => post.tags.some((tag) => tags.includes(tag)));
     if (query.status === 'draft') posts = posts.filter((post) => post.draft && !post.deleted);
     if (query.status === 'published') posts = posts.filter((post) => !post.draft && !post.deleted);
-    return paged(posts.map(({ body: _body, ...post }) => post), Number(query.page ?? 1));
+    return { ...paged(posts.map(({ body: _body, ...post }) => post), Number(query.page ?? 1)), counts };
   });
 
   app.post('/api/posts', { schema: jsonSchema({ body: editorPostBodySchema }) }, async (request, reply) => {
     const created = await repository.createPost(postFromEditorInput(request.body as EditorPostInput));
-    await recordHistory(created, request, 'create');
+    await recordManualEditorHistory(created, request);
     return reply.code(201).send(created);
   });
 
@@ -104,7 +121,7 @@ export async function registerPostRoutes(
       postFromEditorInput(body, slug),
       { expectedRevision: revision },
     );
-    await recordHistory(updated, request, 'save');
+    await recordManualEditorHistory(updated, request);
     return updated;
   };
   app.put('/api/posts/:slug', {
@@ -181,7 +198,8 @@ export async function registerPostRoutes(
       blobSha256: string;
     }>).find((item) => item.revisionNumber === Number(revisionNumber));
     if (!entry) return reply.code(404).send({ code: 'REVISION_NOT_FOUND' });
-    return { ...entry, content: await history.readBlob(entry.blobSha256) };
+    const content = await history.readBlob(entry.blobSha256);
+    return { ...entry, content, body: parsePostMarkdown(content, slug).body };
   });
 
   app.post('/api/posts/:slug/history/:revisionNumber/restore', {

@@ -139,8 +139,10 @@ describe('upgrade progress reporting', () => {
     progress.start(2, 2, 'Run tests');
     progress.succeed('Upgrade complete');
 
+    expect(output.value).toContain('[--------------------]');
+    expect(output.value).toContain('  0% Check public site');
     expect(output.value).toContain('[##########----------]');
-    expect(output.value).toContain('50%');
+    expect(output.value).toContain(' 50% Run tests');
     expect(output.value).toContain('\r\x1b[2K');
     expect(output.value).toContain('100% Upgrade complete');
   });

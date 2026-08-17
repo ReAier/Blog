@@ -1,8 +1,9 @@
-﻿import { authApi } from './auth';
+import { authApi } from './auth';
 import { clipsApi } from './clips';
 import { imagesApi } from './images';
 import { operationsApi } from './operations';
 import { postsApi } from './posts';
+import { trashApi } from './trash';
 
 export { ApiConflictError, ApiError } from './transport';
 export type { RequestOptions } from './transport';
@@ -13,4 +14,5 @@ export const api = {
   ...clipsApi,
   ...imagesApi,
   ...operationsApi,
+  ...trashApi,
 };

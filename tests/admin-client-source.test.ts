@@ -112,7 +112,7 @@ describe('admin client source contract', () => {
     expect(await source('src/pages/PublishPage.tsx')).toContain('aria-live="polite"');
   });
 
-  it('provides CodeMirror editing, two-second autosave, shortcuts, conflicts and preview workflows', async () => {
+  it('provides CodeMirror editing, change-driven autosave, tab indentation, conflicts and preview workflows', async () => {
     const [editor, postEditor, actions] = await Promise.all([
       source('src/components/MarkdownEditor.tsx'),
       source('src/pages/PostEditorPage.tsx'),
@@ -128,18 +128,20 @@ describe('admin client source contract', () => {
     expect(editor).not.toContain('extensions = []');
     expect(editor).toContain('const onReadyRef = useRef(onReady)');
     expect(editor).toContain('onReadyRef.current = onReady');
-    expect(editor).toContain('}, [ariaLabel, extensions, language]);');
+    expect(editor).toContain('}, [ariaLabel, extensions, indentOnTab, language]);');
     expect(editor).not.toContain('[ariaLabel, extensions, onReady]');
-    expect(postEditor).toMatch(/useAutosave\([\s\S]*2000/);
+    expect(postEditor).toMatch(/useAutosave\([\s\S]*800/);
     expect(postEditor).toContain('ApiConflictError');
     expect(postEditor).toContain('内容版本冲突');
     expect(postEditor).not.toContain('完整预览');
     expect(postEditor).toContain('sandbox=""');
     expect(postEditor).toContain('updatedAt: todayInShanghai()');
     expect(postEditor).not.toContain('???');
-    expect(actions).toContain('createClipFence');
+    expect(actions).not.toContain('createClipFence');
     expect(actions).toContain('createImageMarkdown');
-    expect(actions).toContain("key.toLowerCase() === 's'");
+    expect(editor).toContain('indentWithTab');
+    expect(editor).not.toContain("key: 'Mod-s'");
+    expect(postEditor).not.toContain('Ctrl S');
   });
 
   it('exposes history, automatic metadata, linked-resource and SSE workflows', async () => {
@@ -153,7 +155,7 @@ describe('admin client source contract', () => {
     expect(postEditor).toContain('listPostHistory');
     expect(postEditor).toContain('restorePostHistory');
     expect(postEditor).toContain('automaticPostSlug');
-    expect(postEditor).toContain('createClipAtCursor');
+    expect(postEditor).not.toContain('createClipAtCursor');
     expect(postEditor).toContain("updateFrontmatter('cover'");
     expect(clipEditor).toContain('automaticClipSlug');
     expect(clipEditor).toContain('deleteClip');
@@ -161,10 +163,103 @@ describe('admin client source contract', () => {
     expect(clipEditor).toContain('clipDownloadUrl');
     expect(await source('src/pages/ClipsPage.tsx')).toContain('importClip');
     expect(publishPage).toContain('subscribePublishJob');
+    expect(publishPage).toContain("preparing: '准备快照'");
+    expect(publishPage).toContain("publishing ? '正在创建任务…'");
     expect(publishPage).not.toContain('???');
     expect(operations).toContain('new EventSource');
   });
 
+  it('uses a server-authoritative and error-visible Clip insertion flow', async () => {
+    const [postEditor, clipsApi] = await Promise.all([
+      source('src/pages/PostEditorPage.tsx'),
+      source('src/api/clips.ts'),
+    ]);
+
+    expect(postEditor).toContain('const clipInsertOffsetRef = useRef<number | null>(null)');
+    expect(postEditor).toContain('const [clipInsertBusy, setClipInsertBusy] = useState(false)');
+    expect(postEditor).toContain('clipInsertOffsetRef.current = editor.getSelectionOffset()');
+    expect(postEditor).toContain('const updated = await api.attachClipToPost(');
+    expect(postEditor).toContain('setDraft(postToInput(updated))');
+    expect(postEditor).toContain('revisionRef.current = updated.revision');
+    expect(postEditor).toContain('setRevision(updated.revision)');
+    expect(postEditor).not.toContain('editor?.insertText(createClipFence');
+    expect(postEditor).not.toContain('if (!clip) return');
+    expect(postEditor).not.toContain("import { createClipFence");
+    expect(clipsApi).toContain('request<PostDocument>');
+  });
+
+  it('keeps the Clip picker on a single scrolling container', async () => {
+    const styles = await source('src/styles.css');
+    const clipIndexRule = styles.match(/\.clip-reuse-index\s*\{([^}]*)\}/)?.[1] ?? '';
+
+    expect(clipIndexRule).not.toMatch(/overflow\s*:/);
+    expect(clipIndexRule).not.toMatch(/max-height\s*:/);
+    expect(styles).toMatch(/\.picker-list\s*\{[^}]*overflow-y:\s*auto/);
+    expect(styles).toMatch(/\.history-dialog \.picker-list\s*\{[^}]*overflow:\s*hidden/);
+  });
+
+  it('hides the idle save-state label and marker in article and Clip editors', async () => {
+    const [postEditor, clipEditor] = await Promise.all([
+      source('src/pages/PostEditorPage.tsx'),
+      source('src/pages/ClipEditorPage.tsx'),
+    ]);
+
+    expect(postEditor).not.toContain('尚未修改');
+    expect(clipEditor).not.toContain('尚未修改');
+    expect(postEditor).toContain("saveState !== 'idle'");
+    expect(clipEditor).toContain("state !== 'idle'");
+  });
+  it('shows body-only history with independent panes and concise restore copy', async () => {
+    const [postEditor, styles] = await Promise.all([
+      source('src/pages/PostEditorPage.tsx'),
+      source('src/styles.css'),
+    ]);
+
+    expect(postEditor).toContain('historyRevision.body');
+    expect(postEditor).not.toContain('historyRevision.content');
+    expect(postEditor).toContain('>恢复</button>');
+    expect(postEditor).not.toContain('恢复此版本');
+    expect(postEditor).toContain("!entry.groupId.startsWith('autosave-')");
+    expect(postEditor).not.toContain('before-restore-');
+    expect(postEditor).not.toContain('before-delete-');
+    expect(postEditor).toContain('revisionRef.current = restored.revision');
+    expect(postEditor).toContain('setLoadBaselineKey(restored.revision)');
+    expect(styles).toMatch(/\.history-dialog \.picker-list\s*\{[^}]*overflow:\s*hidden/);
+    expect(styles).toMatch(/\.history-list\s*\{[^}]*overflow-y:\s*auto/);
+    expect(styles).toMatch(/\.history-compare\s*\{[^}]*overflow-y:\s*auto/);
+    expect(styles).toMatch(/\.history-compare\s*>\s*header\s+\.primary-button\s*\{[^}]*min-width:\s*84px[^}]*white-space:\s*nowrap[^}]*background:\s*var\(--accent\)/s);
+  });
+  it('marks only explicit save-button requests as manual history writes', async () => {
+    const [postsApi, postEditor] = await Promise.all([
+      source('src/api/posts.ts'),
+      source('src/pages/PostEditorPage.tsx'),
+    ]);
+
+    expect(postsApi).toContain("'X-History-Mode': 'manual'");
+    expect(postEditor).toContain('api.createPost(payload, historyGroup)');
+    expect(postEditor).toContain('api.savePost(payload, revisionRef.current, historyGroup)');
+  });
+  it('keeps list filters above content and uses row-wide semantic navigation', async () => {
+    const [posts, clips, styles] = await Promise.all([
+      source('src/pages/PostsPage.tsx'),
+      source('src/pages/ClipsPage.tsx'),
+      source('src/styles.css'),
+    ]);
+    expect(posts).not.toContain('includeDeleted: true');
+    expect(posts).not.toContain('counts.deleted');
+    expect(posts).toContain('row-stretched-link');
+    expect(posts).not.toContain('编辑 →');
+    expect(clips).toContain('className="search-field post-title-search"');
+    expect(clips).toContain('className="data-table clip-table"');
+    expect(clips).toContain('row-stretched-link');
+    expect(clips).not.toContain('className="clip-grid"');
+    expect(clips).not.toContain('clip.references');
+    expect(styles).toMatch(/\.toolbar\.paper-strip\s*\{[^}]*position:\s*relative[^}]*z-index:\s*20[^}]*overflow:\s*visible/s);
+    expect(styles).toMatch(/\.tag-filter-control\s*>\s*\.secondary-button\s*\{[^}]*border-radius:\s*11px/);
+    expect(styles).toMatch(/\.data-table tbody tr\s*\{[^}]*position:\s*relative/);
+    expect(styles).toMatch(/\.row-stretched-link::after\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0/);
+    expect(styles).toMatch(/main\.content-canvas:focus(?:-visible)?\s*\{[^}]*outline:\s*none/);
+  });
   it('uses the site confirmation provider instead of native browser dialogs', async () => {
     const [app, provider, ...pages] = await Promise.all([
       source('src/App.tsx'),
@@ -215,7 +310,7 @@ describe('admin client source contract', () => {
     ]);
 
     expect(app).toContain("path: '/security'");
-    expect(shell).toContain("to: '/security'");
+    expect(shell).toContain('to="/security"');
     expect(page).toContain('createApiToken');
     expect(page).toContain('revokeApiToken');
     expect(page).toContain('明文令牌只显示这一次');

@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { SectionCard } from '../components/AppShell';
 import { ErrorBlock, LoadingBlock, PageHeader, formatBytes, formatDate } from '../components/ui';
@@ -52,7 +52,7 @@ export function DashboardPage() {
           <div className={`publish-orbit status-${data.latestPublish?.status ?? 'idle'}`} aria-hidden="true"><span /></div>
           <div className="pulse-copy">
             <strong>{data.latestPublish ? ({
-              queued: '等待发布', validating: '正在检查', building: '正在构建', switching: '正在切换', succeeded: '线上版本正常', failed: '最近发布失败',
+              preparing: '正在准备快照', queued: '等待发布', validating: '正在检查', building: '正在构建', switching: '正在切换', succeeded: '线上版本正常', failed: '最近发布失败',
             })[data.latestPublish.status] : '尚未执行发布'}</strong>
             <p>{data.latestPublish?.release ? `当前版本 ${data.latestPublish.release}` : '准备好后前往发布台生成新版本。'}</p>
             <Link className="secondary-button" to="/publish">打开发布台</Link>

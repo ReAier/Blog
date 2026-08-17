@@ -1,4 +1,4 @@
-﻿import type { ClipDocument, ClipPageResult, ClipSaveInput } from '../types';
+﻿import type { ClipDocument, ClipPageResult, ClipSaveInput, PostDocument } from '../types';
 import { endpoint, fileForm, queryString, request } from './transport';
 
 export const clipsApi = {
@@ -20,8 +20,8 @@ export const clipsApi = {
     rawBody: fileForm(file, fields),
   }),
   clipDownloadUrl: (slug: string) => endpoint(`/clips/${encodeURIComponent(slug)}/download`),
-  attachClipToPost: (postSlug: string, clipSlug: string, postRevision: string, insertOffset?: number) => (
-    request<{ ok: true }>(`/posts/${encodeURIComponent(postSlug)}/clip-references`, {
+  attachClipToPost: (postSlug: string, clipSlug: string, postRevision: string, insertOffset: number) => (
+    request<PostDocument>(`/posts/${encodeURIComponent(postSlug)}/clip-references`, {
       method: 'POST',
       body: { clipSlug, expectedPostRevision: postRevision, insertOffset },
     })

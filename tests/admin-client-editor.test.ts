@@ -2,33 +2,14 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  createClipFence,
   createImageMarkdown,
-  isSaveShortcut,
+  imageAssetMatchesPath,
 } from '../admin/client/src/lib/editor-actions';
 import { buildInstantPreview } from '../admin/client/src/lib/preview';
 
 const clientRoot = join(process.cwd(), 'admin', 'client', 'src');
 const readClient = (path: string) => readFile(join(clientRoot, path), 'utf8');
 describe('admin editor insertion helpers', () => {
-  it('creates the blog clip fence contract', () => {
-    expect(createClipFence({
-      title: 'Fenwick Tree',
-      description: 'Reusable implementation',
-      language: 'cpp',
-      file: 'fenwick.cpp',
-      createdAt: '2026-08-13',
-    })).toBe([
-      '```clip',
-      'title: Fenwick Tree',
-      'description: Reusable implementation',
-      'language: cpp',
-      'file: fenwick.cpp',
-      'createdAt: 2026-08-13',
-      '```',
-    ].join('\n'));
-  });
-
   it('escapes image alt text and emits an optional title', () => {
     expect(createImageMarkdown({
       alt: 'diagram [draft]',
@@ -37,10 +18,11 @@ describe('admin editor insertion helpers', () => {
     })).toBe('![diagram \\[draft\\]](/images/post/diagram.webp "Architecture \\"v2\\"")');
   });
 
-  it('recognizes Ctrl+S and Command+S without accepting plain S', () => {
-    expect(isSaveShortcut({ key: 's', ctrlKey: true, metaKey: false })).toBe(true);
-    expect(isSaveShortcut({ key: 'S', ctrlKey: false, metaKey: true })).toBe(true);
-    expect(isSaveShortcut({ key: 's', ctrlKey: false, metaKey: false })).toBe(false);
+  it('matches managed image paths across editor and API formats', () => {
+    const asset = { markdownPath: '../images/post/cover.webp', relativePath: 'images/post/cover.webp', url: '/api/images/id/content' };
+    expect(imageAssetMatchesPath(asset, '../images/post/cover.webp')).toBe(true);
+    expect(imageAssetMatchesPath(asset, 'images/post/cover.webp')).toBe(true);
+    expect(imageAssetMatchesPath(asset, '/media/post/cover.webp')).toBe(true);
   });
 });
 

@@ -1,12 +1,12 @@
-import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { dirname, extname, resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { extname } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import type { AdminConfig } from '../config';
 import { resolveContentPath } from '../content/paths';
 import type { ContentRepository } from '../content/repository';
 import { ImageService } from '../images/service';
 import { imagePathFromId, paged, presentImage, sha256 } from '../http';
+import { moveImageToTrash, restoreTrashItem } from '../trash/service';
 import { configuredUploadLimit, MAX_IMAGE_BYTES } from '../limits';
 import { idParamsSchema, imageListQuerySchema, jsonSchema } from '../schemas';
 
@@ -17,15 +17,29 @@ export async function registerImageRoutes(
   const { config, repository } = dependencies;
   const imageService = new ImageService({ contentRoot: config.contentRoot });
 
+  app.get('/media/*', async (request, reply) => {
+    const path = (request.params as { '*': string })['*'];
+    const absolute = resolveContentPath(config.contentRoot, 'images', path);
+    const contentTypes: Record<string, string> = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp',
+    };
+    reply.type(contentTypes[extname(path).toLowerCase()] ?? 'application/octet-stream');
+    reply.header('access-control-allow-origin', '*');
+    reply.header('cross-origin-resource-policy', 'cross-origin');
+    reply.header('cache-control', 'private, max-age=3600');
+    return reply.send(await readFile(absolute));
+  });
+
   app.get('/api/images', { schema: jsonSchema({ querystring: imageListQuerySchema }) }, async (request) => {
-    const query = request.query as { query?: string; referencedBy?: string; owner?: string; page?: string };
+    const query = request.query as { query?: string; page?: string };
     let images = await Promise.all(
       (await repository.listImages()).map((image) => presentImage(config, image)),
     );
     const search = query.query?.trim().toLowerCase();
     if (search) images = images.filter((image) => image.name.toLowerCase().includes(search));
-    const referencedBy = query.referencedBy ?? query.owner;
-    if (referencedBy) images = images.filter((image) => image.references.some((reference) => reference.postSlug === referencedBy));
     return paged(images, Number(query.page ?? 1));
   });
 
@@ -66,54 +80,27 @@ export async function registerImageRoutes(
     const path = imagePathFromId((request.params as { id: string }).id);
     const image = (await repository.listImages()).find((item) => item.path === path);
     if (!image) return reply.code(404).send({ code: 'CONTENT_NOT_FOUND' });
-    if (image.references.length) {
-      return reply.code(409).send({
-        code: 'IMAGE_REFERENCED',
-        message: 'The image is still referenced by content.',
-        references: image.references,
-      });
-    }
-    const source = resolveContentPath(config.contentRoot, 'images', path);
-    const bytes = await readFile(source);
-    const contentHash = sha256(bytes);
-    const blob = resolve(config.historyRoot, contentHash);
-    await writeFile(blob, bytes, { flag: 'wx', mode: 0o600 }).catch((error: NodeJS.ErrnoException) => {
-      if (error.code !== 'EEXIST') throw error;
+    const bytes = await readFile(resolveContentPath(config.contentRoot, 'images', path));
+    const trashId = await moveImageToTrash({
+      contentRoot: config.contentRoot,
+      trashRoot: config.trashRoot,
+      historyRoot: config.historyRoot,
+      path,
+      sha256: sha256(bytes),
+      bytes,
     });
-    const trashId = randomUUID();
-    const trashBase = resolve(config.trashRoot, 'images', trashId);
-    const target = resolve(trashBase, path);
-    await mkdir(dirname(target), { recursive: true });
-    await rename(source, target);
-    await writeFile(
-      resolve(trashBase, 'restore.json'),
-      `${JSON.stringify({ path, sha256: contentHash, deletedAt: new Date().toISOString() })}\n`,
-      'utf8',
-    );
     return { ok: true, trashId };
   });
 
-  app.post('/api/images/:id/restore', { schema: jsonSchema({ params: idParamsSchema }) }, async (request, reply) => {
-    const trashId = (request.params as { id: string }).id;
-    if (!/^[a-f0-9-]{36}$/i.test(trashId)) {
-      return reply.code(400).send({ code: 'INVALID_TRASH_ID' });
-    }
-    const base = resolve(config.trashRoot, 'images', trashId);
-    const metadata = JSON.parse(
-      await readFile(resolve(base, 'restore.json'), 'utf8'),
-    ) as { path: string };
-    const source = resolve(base, metadata.path);
-    const target = resolveContentPath(config.contentRoot, 'images', metadata.path);
-    try {
-      await readFile(target);
-      return reply.code(409).send({ code: 'IMAGE_ALREADY_EXISTS' });
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-    }
-    await mkdir(dirname(target), { recursive: true });
-    await rename(source, target);
-    await rm(base, { recursive: true, force: true });
-    const image = (await repository.listImages()).find((item) => item.path === metadata.path);
-    return image ? presentImage(config, image) : { ok: true };
+  app.post('/api/images/:id/restore', { schema: jsonSchema({ params: idParamsSchema }) }, async (request) => {
+    await restoreTrashItem({
+      contentRoot: config.contentRoot,
+      trashRoot: config.trashRoot,
+      repository,
+      type: 'image',
+      id: (request.params as { id: string }).id,
+    });
+    return { ok: true };
   });
+
 }

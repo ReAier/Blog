@@ -1,4 +1,4 @@
-﻿import { createHash } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { stat } from 'node:fs/promises';
 import type { FastifyRequest } from 'fastify';
 import sharp from 'sharp';
@@ -85,8 +85,9 @@ export function paged<T>(items: T[], requestedPage = 1, pageSize = 50) {
 }
 
 export function presentClip(clip: ClipDocument) {
+  const { references: _references, ...presented } = clip;
   return {
-    ...clip,
+    ...presented,
     revision: combinedClipRevision(clip),
   };
 }
@@ -122,12 +123,12 @@ export async function presentImage(
     url: `/api/images/${encodeURIComponent(id)}/content`,
     markdownPath: `../images/${image.path}`,
     relativePath: `images/${image.path}`,
+    publicUrl: new URL(`/media/${image.path.split('/').map(encodeURIComponent).join('/')}`, config.siteOrigin).toString(),
     width: metadata.width ?? 0,
     height: metadata.height ?? 0,
     byteSize: image.byteSize,
     sha256: image.revision,
     createdAt: info.birthtime.toISOString(),
-    references: image.references,
   };
 }
 

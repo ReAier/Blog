@@ -1,8 +1,9 @@
-﻿import { mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createContentRepository } from '../admin/server/content/repository';
+import { attachClipToPostTransaction } from '../admin/server/content/transactions';
 import { ImageService } from '../admin/server/images/service';
 import type { PostDocument } from '../admin/shared/content-types';
 
@@ -83,7 +84,7 @@ describe('independent reusable clips', () => {
       .resolves.toContain('"version": 1');
   });
 
-  it('keeps an unreferenced clip valid and blocks deletion after it is referenced', async () => {
+  it('allows referenced clips to be removed so publish validation can report the broken reference', async () => {
     const root = await createRoot();
     const repository = createContentRepository({ root });
     await repository.createClip('standalone', {
@@ -95,15 +96,38 @@ describe('independent reusable clips', () => {
 
     expect((await repository.readClip('standalone')).references).toEqual([]);
     await repository.createPost(post('owner', '```clip\nslug: standalone\n```\n'));
-    await expect(repository.deleteClip('standalone')).rejects.toMatchObject({
-      code: 'CONTENT_CONFLICT',
-    });
+    await repository.deleteClip('standalone');
+    await expect(repository.listClips()).resolves.toEqual([]);
   });
 
-  it('rejects article references to missing clips', async () => {
+  it('keeps normal clip listing available when an article references a missing clip', async () => {
     const root = await createRoot();
     const repository = createContentRepository({ root });
     await repository.createPost(post('broken', '```clip\nslug: missing\n```\n'));
-    await expect(repository.listClips()).rejects.toThrow(/missing clip/i);
+    await expect(repository.listClips()).resolves.toEqual([]);
   });
+
+  it('returns the updated article when attaching a Clip at a validated offset', async () => {
+    const root = await createRoot();
+    const repository = createContentRepository({ root });
+    const before = await repository.createPost(post('owner', 'before\n\nafter\n'));
+    await repository.createClip('shared-answer', {
+      title: 'Shared answer',
+      language: 'typescript',
+      file: 'answer.ts',
+      createdAt: '2026-08-17',
+    }, 'export const answer = 42;\n');
+
+    const updated = await attachClipToPostTransaction(
+      repository,
+      'owner',
+      'shared-answer',
+      { expectedPostRevision: before.revision, insertOffset: 7 },
+    );
+
+    expect(updated.body).toBe('before\n```clip\nslug: shared-answer\n```\nafter\n');
+    expect(updated.revision).not.toBe(before.revision);
+  });
+
 });
+

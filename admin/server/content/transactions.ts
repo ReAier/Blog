@@ -1,4 +1,4 @@
-﻿import type { ClipDocument, ClipMetadata } from '../../shared/content-types';
+﻿import type { ClipDocument, ClipMetadata, StoredPostDocument } from '../../shared/content-types';
 import { ContentConflictError, ContentDuplicateError, ContentValidationError } from './errors';
 import { scanClipFences, serializeClipReference } from './clips';
 import type { ContentRepository } from './repository';
@@ -119,14 +119,14 @@ export async function attachClipToPostTransaction(
   postSlug: string,
   clipSlug: string,
   options: { expectedPostRevision: string; insertOffset?: number },
-): Promise<void> {
+): Promise<StoredPostDocument> {
   await repository.readClip(clipSlug);
   const post = await repository.readPost(postSlug);
   if (post.revision !== options.expectedPostRevision) {
     throw new ContentConflictError('Post revision does not match expectedPostRevision.');
   }
   const body = insertFence(post.body, serializeClipReference(clipSlug), options.insertOffset);
-  await repository.updatePost(post.slug, { ...post, body }, { expectedRevision: post.revision });
+  return repository.updatePost(post.slug, { ...post, body }, { expectedRevision: post.revision });
 }
 
 export async function removeClipFromPostTransaction(

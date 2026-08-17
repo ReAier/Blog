@@ -1,8 +1,8 @@
-﻿import type { ImageAsset, PageResult } from '../types';
+import type { ImageAsset, PageResult } from '../types';
 import { fileForm, queryString, request } from './transport';
 
 export const imagesApi = {
-  listImages: (options: { query?: string; referencedBy?: string; page?: number } = {}) => (
+  listImages: (options: { query?: string; page?: number } = {}) => (
     request<PageResult<ImageAsset>>(`/images${queryString(options)}`)
   ),
   uploadImage: (file: File) => request<ImageAsset>('/images', {

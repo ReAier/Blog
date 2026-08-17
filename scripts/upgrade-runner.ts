@@ -136,7 +136,8 @@ export class ProgressReporter {
     }
 
     this.active = true;
-    const percentage = Math.floor((stepIndex / total) * 100);
+    const completedSteps = Math.max(0, Math.min(total, stepIndex - 1));
+    const percentage = Math.floor((completedSteps / total) * 100);
     const completed = Math.floor((percentage / 100) * 20);
     const bar = `${'#'.repeat(completed)}${'-'.repeat(20 - completed)}`;
     this.output.write(`\r\x1b[2K[${bar}] ${percentage.toString().padStart(3)}% ${label}`);

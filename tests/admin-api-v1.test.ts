@@ -199,7 +199,6 @@ describe('AI REST API v1 clips', () => {
     expect(created.statusCode, created.body).toBe(201);
     expect(created.json()).toMatchObject({
       slug: 'ai-helper',
-      references: [],
       revision: expect.any(String),
     });
 
@@ -289,6 +288,7 @@ describe('AI REST API v1 images', () => {
     expect(uploaded.json()).toMatchObject({
       originalName: expect.stringContaining('pixel'),
       markdownPath: expect.stringMatching(/^\.\.\/images\//),
+      publicUrl: expect.stringMatching(/^https:\/\/blog\.reaier\.top\/media\//),
       width: 1,
       height: 1,
     });

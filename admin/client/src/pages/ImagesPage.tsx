@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Dialog } from '../components/Dialog';
 import { api } from '../api/client';
 import { useConfirmDialog } from '../context/ConfirmDialogContext';
@@ -16,17 +16,30 @@ import { createImageMarkdown } from '../lib/editor-actions';
 export function ImagesPage() {
   const confirmAction = useConfirmDialog();
   const [query, setQuery] = useState('');
-  const [referencedBy, setReferencedBy] = useState('');
   const [showUpload, setShowUpload] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadError, setUploadError] = useState<string>();
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string>();
+  const messageTimerRef = useRef<number | undefined>(undefined);
   const [lastTrashId, setLastTrashId] = useState<string>();
   const { data, loading, error, reload } = useApiResource(
-    () => api.listImages({ query, referencedBy }),
-    [query, referencedBy],
+    () => api.listImages({ query }),
+    [query],
   );
+
+  useEffect(() => () => {
+    if (messageTimerRef.current !== undefined) window.clearTimeout(messageTimerRef.current);
+  }, []);
+
+  const showTransientMessage = (value: string) => {
+    if (messageTimerRef.current !== undefined) window.clearTimeout(messageTimerRef.current);
+    setMessage(value);
+    messageTimerRef.current = window.setTimeout(() => {
+      setMessage((current) => current === value ? undefined : current);
+      messageTimerRef.current = undefined;
+    }, 3_000);
+  };
 
   const openUpload = () => {
     setSelectedFiles([]);
@@ -62,15 +75,15 @@ export function ImagesPage() {
 
   const copy = async (markdown: string) => {
     await navigator.clipboard.writeText(markdown);
-    setMessage('Markdown 已复制到剪贴板。');
+    showTransientMessage('Markdown 已复制到剪贴板。');
   };
 
   const remove = async (id: string, name: string) => {
     const accepted = await confirmAction({
       eyebrow: 'Delete image',
       title: '删除这张图片？',
-      message: `“${name}”将移入回收站；如果仍被内容引用，服务端会阻止删除。`,
-      confirmLabel: '确认删除',
+      message: `“${name}”将移入统一回收站，可从设置中恢复。文章中的错误引用会在发布时报告。`,
+      confirmLabel: '移入回收站',
       tone: 'danger',
     });
     if (!accepted) return;
@@ -127,14 +140,6 @@ export function ImagesPage() {
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
-        <label className="owner-field">
-          <span>文章 slug</span>
-          <input
-            value={referencedBy}
-            onChange={(event) => setReferencedBy(event.target.value)}
-            placeholder="按文章 slug 筛选"
-          />
-        </label>
       </section>
       {loading ? <LoadingBlock label="正在读取图片索引…" /> : error ? (
         <ErrorBlock message={error} onRetry={reload} />
@@ -145,7 +150,7 @@ export function ImagesPage() {
           {data.items.map((image) => {
             const markdown = createImageMarkdown({
               alt: image.originalName || image.name,
-              path: image.markdownPath || image.url,
+              path: image.publicUrl,
             });
             return (
               <article className="image-card" key={image.id}>
@@ -155,8 +160,7 @@ export function ImagesPage() {
                 <div className="image-meta">
                   <h2>{image.originalName || image.name}</h2>
                   <p>{image.width} × {image.height} · {formatBytes(image.byteSize)}</p>
-                  <p>{image.references.length ? `被 ${new Set(image.references.map((item) => item.postSlug)).size} 篇文章引用` : '未使用'} · {formatDate(image.createdAt)}</p>
-                  {!!image.references?.length && <p>引用：{image.references.map((item) => item.postSlug).join('、')}</p>}
+                  <p>{formatDate(image.createdAt)}</p>
                 </div>
                 <footer>
                   <button type="button" onClick={() => void copy(markdown)}>复制 Markdown</button>

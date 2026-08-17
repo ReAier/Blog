@@ -26,6 +26,27 @@ describe('admin preview regressions', () => {
     expect(html).toContain('.katex-mathml{position:absolute');
   });
 
+
+  it('rewrites same-site public media URLs for unpublished instant-preview images', async () => {
+    const previewRoutes = await import('../admin/server/routes/previews');
+    const rewrite = (previewRoutes as Record<string, unknown>).previewManagedImageUrl;
+
+    expect(rewrite).toBeTypeOf('function');
+    if (typeof rewrite !== 'function') return;
+
+    expect(rewrite(
+      'https://blog.reaier.top/media/screenshots/example.webp',
+      'https://blog.reaier.top',
+    )).toBe('/media/screenshots/example.webp');
+    expect(rewrite(
+      'https://cdn.example.com/media/example.webp',
+      'https://blog.reaier.top',
+    )).toBe('https://cdn.example.com/media/example.webp');
+    expect(rewrite(
+      'https://blog.reaier.top/posts/example/',
+      'https://blog.reaier.top',
+    )).toBe('https://blog.reaier.top/posts/example/');
+  });
   it('serves KaTeX fonts to the sandboxed instant-preview document', async () => {
     const routes = await read('admin/server/routes/previews.ts');
 

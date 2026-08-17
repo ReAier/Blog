@@ -13,6 +13,31 @@ export const CLIP_LANGUAGE_OPTIONS: ClipLanguageOption[] = [
   { value: 'cpp', label: 'C / C++' },
 ];
 
+const CLIP_LANGUAGE_BY_EXTENSION: Readonly<Record<string, string>> = {
+  '.txt': 'text',
+  '.ts': 'typescript',
+  '.js': 'javascript',
+  '.mjs': 'javascript',
+  '.cjs': 'javascript',
+  '.tsx': 'tsx',
+  '.jsx': 'jsx',
+  '.py': 'python',
+  '.c': 'cpp',
+  '.h': 'cpp',
+  '.cc': 'cpp',
+  '.cpp': 'cpp',
+  '.cxx': 'cpp',
+  '.hpp': 'cpp',
+  '.hxx': 'cpp',
+};
+
+export const CLIP_IMPORT_ACCEPT = Object.keys(CLIP_LANGUAGE_BY_EXTENSION).join(',');
+
+export function detectClipLanguage(filename: string): string | undefined {
+  const extension = /\.[^.]+$/.exec(filename.trim())?.[0].toLowerCase();
+  return extension ? CLIP_LANGUAGE_BY_EXTENSION[extension] : undefined;
+}
+
 export function clipLanguageLabel(value: string): string {
   return CLIP_LANGUAGE_OPTIONS.find((option) => option.value === value)?.label ?? value;
 }

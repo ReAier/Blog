@@ -12,6 +12,7 @@ import {
 } from '../content/transactions';
 import type { HistoryService } from '../history/service';
 import type { AdminConfig } from '../config';
+import { moveClipToTrash } from '../trash/service';
 import {
   adminAuth,
   expectedRevision,
@@ -49,13 +50,7 @@ export async function registerClipRoutes(
     let clips = allClips;
     const search = query.query?.trim().toLowerCase();
     if (search) {
-      clips = clips.filter((clip) => [
-        clip.slug,
-        clip.title,
-        clip.description ?? '',
-        clip.file,
-        clip.language,
-      ].some((value) => value.toLowerCase().includes(search)));
+      clips = clips.filter((clip) => clip.file.toLowerCase().includes(search));
     }
     if (query.language) clips = clips.filter((clip) => clip.language === query.language);
     return { ...paged(clips.map(presentClip), Number(query.page ?? 1)), languages };
@@ -116,18 +111,15 @@ export async function registerClipRoutes(
     schema: jsonSchema({ params: slugParamsSchema, body: editorClipBodySchema }),
   }, update);
 
-  app.delete('/api/clips/:slug', { schema: jsonSchema({ params: slugParamsSchema }) }, async (request, reply) => {
+  app.delete('/api/clips/:slug', { schema: jsonSchema({ params: slugParamsSchema }) }, async (request) => {
     const slug = (request.params as { slug: string }).slug;
-    const clip = await repository.readClip(slug);
-    if (clip.references.length) {
-      return reply.code(409).send({
-        code: 'CLIP_REFERENCED',
-        message: 'The clip is still referenced by content.',
-        references: clip.references,
-      });
-    }
-    await repository.deleteClip(slug);
-    return { ok: true };
+    const trashId = await moveClipToTrash({
+      contentRoot: config.contentRoot,
+      trashRoot: config.trashRoot,
+      repository,
+      slug,
+    });
+    return { ok: true, trashId };
   });
 
   app.post('/api/posts/:postSlug/clip-references', {
@@ -142,11 +134,10 @@ export async function registerClipRoutes(
     if (!body.clipSlug || !body.expectedPostRevision) {
       throw new ContentValidationError('clipSlug and expectedPostRevision are required.');
     }
-    await attachClipToPostTransaction(repository, postSlug, body.clipSlug, {
+    return attachClipToPostTransaction(repository, postSlug, body.clipSlug, {
       expectedPostRevision: body.expectedPostRevision,
       insertOffset: body.insertOffset,
     });
-    return { ok: true };
   });
 
   app.delete('/api/posts/:postSlug/clip-references/:clipSlug', {

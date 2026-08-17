@@ -313,8 +313,6 @@ export async function registerApiV1Routes(
   }, async (request) => {
     const query = request.query as {
       query?: string;
-      referencedBy?: string;
-      owner?: string;
       page?: string;
     };
     let images = await Promise.all(
@@ -322,11 +320,6 @@ export async function registerApiV1Routes(
     );
     const search = query.query?.trim().toLowerCase();
     if (search) images = images.filter((image) => image.name.toLowerCase().includes(search));
-    const referencedBy = query.referencedBy ?? query.owner;
-    if (referencedBy) {
-      images = images.filter((image) => image.references
-        .some((reference) => reference.postSlug === referencedBy));
-    }
     recordApiAudit(database, request, 'api.images.list', { resultCount: images.length });
     return paged(images, Number(query.page ?? 1));
   });

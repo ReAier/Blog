@@ -75,6 +75,7 @@ export const postListQuerySchema = {
   additionalProperties: false,
   properties: {
     query: { type: 'string', maxLength: 200 },
+    tags: { type: 'string', maxLength: 1000 },
     status: { type: 'string', enum: ['draft', 'published'] },
     page: { type: 'string', pattern: positiveIntegerPattern },
     includeDeleted: { type: 'string', enum: ['true', 'false'] },

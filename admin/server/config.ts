@@ -9,6 +9,7 @@
   previewsRoot: string;
   clientRoot: string;
   publicOrigin: string;
+  siteOrigin: string;
   secureCookies: boolean;
   host: string;
   port: number;
@@ -32,6 +33,7 @@ export function createAdminConfig(overrides: Partial<AdminConfig> = {}): AdminCo
     previewsRoot: overrides.previewsRoot ?? `${dataRoot}/previews`,
     clientRoot: overrides.clientRoot ?? `${projectRoot}/admin/client/dist`,
     publicOrigin: overrides.publicOrigin ?? process.env.ADMIN_PUBLIC_ORIGIN ?? 'https://admin.blog.reaier.top',
+    siteOrigin: overrides.siteOrigin ?? process.env.BLOG_SITE_ORIGIN ?? 'https://blog.reaier.top',
     secureCookies: overrides.secureCookies ?? process.env.NODE_ENV === 'production',
     host: overrides.host ?? process.env.ADMIN_HOST ?? '127.0.0.1',
     port: overrides.port ?? Number(process.env.ADMIN_PORT ?? 4310),

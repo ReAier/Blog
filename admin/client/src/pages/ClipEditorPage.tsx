@@ -44,7 +44,7 @@ export function ClipEditorPage() {
   const navigate = useNavigate();
   const [draft, setDraft] = useState<ClipSaveInput>(emptyClip);
   const [revision, setRevision] = useState('');
-  const [references, setReferences] = useState<ClipDocument['references']>([]);
+  const [loadBaselineKey, setLoadBaselineKey] = useState(isNew ? 'new' : '');
   const [loaded, setLoaded] = useState(isNew);
   const [loadError, setLoadError] = useState<string>();
   const [message, setMessage] = useState<string>();
@@ -71,11 +71,20 @@ export function ClipEditorPage() {
       setDraft(clipToInput(clip));
       revisionRef.current = clip.revision;
       setRevision(clip.revision);
+      setLoadBaselineKey(clip.revision);
       persistedSlugRef.current = clip.slug;
-      setReferences(clip.references);
       setLoaded(true);
     }).catch((reason) => setLoadError(reason instanceof Error ? reason.message : 'Clip 加载失败'));
   }, [isNew, slug]);
+
+  const draftFingerprint = useCallback((value: ClipSaveInput = draftRef.current) => JSON.stringify({
+    title: value.title,
+    description: value.description,
+    language: value.language,
+    file: value.file,
+    createdAt: value.createdAt,
+    code: value.code,
+  }), []);
 
   const save = useCallback(async () => {
     const draftSnapshot = draftRef.current;
@@ -100,10 +109,9 @@ export function ClipEditorPage() {
         (left, right) => JSON.stringify(left) === JSON.stringify(right),
       ));
       setRevision(saved.revision);
-      setReferences(saved.references);
       setConflict(undefined);
-      if (!persistedSlug) navigate(`/clips/${encodeURIComponent(saved.slug)}`, { replace: true });
-      return saved;
+      if (!persistedSlug) navigateWithoutPrompt(`/clips/${encodeURIComponent(saved.slug)}`, { replace: true });
+      return draftFingerprint(normalized);
     } catch (reason) {
       if (reason instanceof ApiConflictError) {
         setConflict({
@@ -113,15 +121,15 @@ export function ClipEditorPage() {
       }
       throw reason;
     }
-  }, [navigateWithoutPrompt]);
+  }, [draftFingerprint, navigateWithoutPrompt]);
 
   const canSave = loaded && Boolean(
     draft.file
     && draft.title
     && draft.language,
   );
-  const autosave = useCallback(async () => { await save(); }, [save]);
-  const { state, error, saveNow } = useAutosave(autosave, [draft], 2000, canSave);
+  const autosave = useCallback(async () => save(), [save]);
+  const { state, error, saveNow } = useAutosave(autosave, [draft], 800, canSave, () => draftFingerprint(draft), loadBaselineKey);
   const confirmUnsavedNavigation = useCallback(() => confirmAction({
     eyebrow: 'Unsaved changes',
     title: '离开并放弃未保存的修改？',
@@ -142,15 +150,11 @@ export function ClipEditorPage() {
 
 
   const deleteClip = async () => {
-    if (references.length) {
-      setMessage('该 Clip 仍被文章引用，请先从这些文章中移除引用。');
-      return;
-    }
     const accepted = await confirmAction({
       eyebrow: 'Delete source',
-      title: '永久删除剪切内容？',
-      message: `“${draft.title || draft.slug}”当前未被文章引用，删除后无法撤销。`,
-      confirmLabel: '确认删除',
+      title: '将剪切内容移入回收站？',
+      message: `“${draft.title || draft.slug}”可从设置里的回收站恢复；错误引用会在发布时报告。`,
+      confirmLabel: '移入回收站',
       tone: 'danger',
     });
     if (!accepted) return;
@@ -176,16 +180,15 @@ export function ClipEditorPage() {
           <strong>{isNew ? '新剪藏' : draft.title || draft.slug}</strong>
         </div>
         <div className="save-cluster" aria-live="polite">
-          <span className={`save-state state-${state}`}><i />{{
-            idle: '尚未修改',
-            dirty: '等待自动保存',
+          {state !== 'idle' && <span className={`save-state state-${state}`}><i />{{
+            dirty: '未保存',
             saving: '正在保存',
             saved: '已保存',
             error: error || '保存失败',
-          }[state]}</span>
+          }[state]}</span>}
           {!isNew && <a className="secondary-button" href={api.clipDownloadUrl(draft.slug)}>下载原文件</a>}
           <button className="primary-button" type="button" onClick={() => void saveNow()} disabled={!canSave || busy}>
-            保存 <kbd>Ctrl S</kbd>
+            保存
           </button>
         </div>
       </header>
@@ -220,7 +223,6 @@ export function ClipEditorPage() {
           <div className="panel-heading"><span>01</span><div><p>Metadata</p><h1>剪切内容</h1></div></div>
           <div className="frontmatter-form editor-info-form">
             <label className="field"><span>标题</span><input value={draft.title} onChange={(event) => update('title', event.target.value)} /></label>
-            {!isNew && <div className="field"><span>引用文章</span>{references.length ? <div className="resource-index">{references.map((reference) => <Link key={reference.postSlug} to={`/posts/${encodeURIComponent(reference.postSlug)}`}>{reference.postSlug}</Link>)}</div> : <small>当前未被任何文章引用，可独立保存或删除。</small>}</div>}
             <label className="field field-wide"><span>描述</span><textarea rows={5} value={draft.description} onChange={(event) => update('description', event.target.value)} /></label>
             <div className="field-pair">
               <div className="field"><span>语言</span><BlogSelect ariaLabel="语言" value={draft.language} options={clipLanguageOptions(draft.language)} onChange={(language) => update('language', language)} /></div>
@@ -228,12 +230,12 @@ export function ClipEditorPage() {
             </div>
             <label className="field"><span>源文件名</span><input value={draft.file} disabled={!isNew} onChange={(event) => update('file', event.target.value.replace(/[\\/]/g, ''))} placeholder="example.ts" /></label>
 
-            {!isNew && <div className="editor-actions"><button className="danger-text" type="button" onClick={() => void deleteClip()} disabled={busy || references.length > 0}>删除未引用剪切内容</button></div>}
+            {!isNew && <div className="editor-actions"><button className="danger-text" type="button" onClick={() => void deleteClip()} disabled={busy}>移入回收站</button></div>}
           </div>
         </aside>
         <section className="writing-panel code-writing-panel">
           <header className="writing-toolbar"><div><span>02 · Source</span><h2>源码</h2></div><span className="language-label">{draft.language || 'plain text'}</span></header>
-          <MarkdownEditor ariaLabel="Clip 源码编辑器" language={draft.language} value={draft.code} onChange={(code) => update('code', code)} onSave={() => void saveNow()} />
+          <MarkdownEditor ariaLabel="Clip 源码编辑器" language={draft.language} value={draft.code} onChange={(code) => update('code', code)} onSave={() => void saveNow()} indentOnTab />
           <footer className="editor-foot"><span>{draft.code.split('\n').length} 行</span><span>{draft.code.length} 字符</span><span>UTF-8</span></footer>
         </section>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Dialog } from './Dialog';
 import type { ImageAsset } from '../types';
+import { imageAssetMatchesPath } from '../lib/editor-actions';
 
 interface DialogFrameProps {
   title: string;
@@ -139,7 +140,7 @@ export function CoverPickerDialog({ images, selected, onSelect, onClose }: Cover
             className="cover-picker-card"
             type="button"
             key={image.id}
-            aria-pressed={selected === image.markdownPath}
+            aria-pressed={imageAssetMatchesPath(image, selected)}
             onClick={() => onSelect(image.markdownPath)}
           >
             <img src={image.url} alt="" />
@@ -147,7 +148,7 @@ export function CoverPickerDialog({ images, selected, onSelect, onClose }: Cover
               <strong>{image.originalName || image.name}</strong>
               <small>{image.width} × {image.height}</small>
             </span>
-            {selected === image.markdownPath && <b>已选择</b>}
+            {imageAssetMatchesPath(image, selected) && <b>已选择</b>}
           </button>
         ))}
       </div>

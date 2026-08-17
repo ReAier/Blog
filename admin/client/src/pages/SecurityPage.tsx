@@ -1,4 +1,4 @@
-﻿import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { api } from '../api/client';
 import { BlogSelect } from '../components/BlogSelect';
 import { Dialog } from '../components/Dialog';
@@ -12,7 +12,7 @@ const scopeOptions: Array<{ scope: ApiTokenScope; label: string; detail: string 
   { scope: 'posts:write', label: '编写文章', detail: '创建草稿并更新已有文章内容。' },
   { scope: 'clips:read', label: '读取代码片段', detail: '列出和读取独立代码片段。' },
   { scope: 'clips:write', label: '编写代码片段', detail: '创建和更新代码片段。' },
-  { scope: 'images:read', label: '读取图片', detail: '查看图片元数据与引用关系。' },
+  { scope: 'images:read', label: '读取图片', detail: '查看图片元数据与资源列表。' },
   { scope: 'images:write', label: '上传图片', detail: '上传 JPEG、PNG 或 WebP 图片。' },
 ];
 

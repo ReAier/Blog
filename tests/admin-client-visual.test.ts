@@ -14,7 +14,8 @@ describe('admin blog-visual shell contract', () => {
     expect(shell).toContain('className="admin-wordmark"');
     expect(shell).not.toContain('className="sidebar"');
     expect(shell).not.toContain('<aside className="sidebar"');
-    for (const label of ['工作台', '文章', '剪切板', '图片库', '备份', '发布与日志']) {
+    expect(shell).toContain('aria-label="设置"');
+    for (const label of ['工作台', '文章', '剪切板', '图片库', '发布与日志']) {
       expect(shell).toContain(label);
     }
   });
@@ -85,5 +86,20 @@ describe('compact metadata controls', () => {
       '.clip-import-dialog',
     ]) expect(css).toContain(selector);
     expect(css).toMatch(/\.editor-info-form\s*\{[^}]*gap:\s*(?:8|10|12)px/s);
+  });
+});
+
+
+describe('admin settings menu visuals', () => {
+  it('styles the compact settings trigger and anchored menu', async () => {
+    const styles = await read('styles.css');
+
+    expect(styles).toContain('.settings-control { position: relative; }');
+    expect(styles).toContain('.settings-trigger');
+    expect(styles).toContain('.settings-menu {');
+    expect(styles).toContain('position: absolute;');
+    expect(styles).toContain('right: 0;');
+    expect(styles).toContain('.settings-menu-item.is-active');
+    expect(styles).toContain('.settings-menu-divider');
   });
 });

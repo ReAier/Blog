@@ -13,6 +13,34 @@ import { remarkReferenceCards } from '../../../src/lib/remark-reference-card';
 import type { AdminConfig } from '../config';
 import { jsonSchema } from '../schemas';
 
+interface PreviewMarkdownNode {
+  type?: string;
+  url?: string;
+  children?: PreviewMarkdownNode[];
+}
+
+export function previewManagedImageUrl(value: string, siteOrigin: string): string {
+  try {
+    const candidate = new URL(value);
+    const site = new URL(siteOrigin);
+    if (candidate.origin === site.origin && candidate.pathname.startsWith('/media/')) {
+      return candidate.pathname + candidate.search + candidate.hash;
+    }
+  } catch {
+    // Relative and non-URL values are already handled by remarkManagedImages.
+  }
+  return value;
+}
+
+function remarkPreviewManagedImages(options: { siteOrigin: string }) {
+  const transform = (node: PreviewMarkdownNode): void => {
+    if (node.type === 'image' && node.url) {
+      node.url = previewManagedImageUrl(node.url, options.siteOrigin);
+    }
+    node.children?.forEach(transform);
+  };
+  return (tree: PreviewMarkdownNode) => transform(tree);
+}
 export function previewKatexFontPath(projectRoot: string, name: string): string {
   if (!/^[A-Za-z0-9_-]+\.(?:woff2?|ttf)$/.test(name)) {
     throw new Error('Invalid KaTeX font path.');
@@ -57,6 +85,7 @@ export async function registerPreviewRoutes(
     remarkPlugins: [
       remarkMath,
       remarkManagedImages,
+      [remarkPreviewManagedImages, { siteOrigin: config.siteOrigin }],
       [remarkClipCards, { clipsRoot: resolve(config.contentRoot, 'clips') }],
       remarkCalloutCards,
       remarkReferenceCards,

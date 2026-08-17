@@ -1,4 +1,4 @@
-﻿import { readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -12,8 +12,14 @@ describe('admin app shell behavior', () => {
     expect(shell).toContain('<header className="admin-header">');
     expect(shell).toContain('<nav id="admin-primary-navigation" className="admin-nav" aria-label="主导航">');
     expect(shell).toContain('<NavLink');
-    expect(shell).toContain('useEffect(() => setMenuOpen(false), [location.pathname])');
+    expect(shell).toContain('setMenuOpen(false);');
     expect(shell).not.toContain('menu-scrim');
+    expect(shell).not.toContain("{ to: '/backups', label: '备份' }");
+    expect(shell).not.toContain("{ to: '/security', label: 'API 与安全'");
+    expect(shell).not.toContain('责任编辑');
+    expect(shell).not.toContain('className="avatar"');
+    expect(shell).toContain('aria-label="设置"');
+    expect(shell).toContain('aria-label="设置菜单"');
   });
 
   it('keeps editor initialization stable across parent renders', async () => {
@@ -23,7 +29,7 @@ describe('admin app shell behavior', () => {
     expect(editor).toContain('extensions = defaultExtensions');
     expect(editor).toContain('const onReadyRef = useRef(onReady)');
     expect(editor).toContain('onReadyRef.current = onReady');
-    expect(editor).toContain('}, [ariaLabel, extensions, language]);');
+    expect(editor).toContain('}, [ariaLabel, extensions, indentOnTab, language]);');
     expect(editor).not.toContain('}, [ariaLabel, extensions, onReady]);');
   });
 });

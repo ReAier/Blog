@@ -37,6 +37,7 @@ import { registerImageRoutes } from './routes/images';
 import { registerPostRoutes } from './routes/posts';
 import { registerPreviewRoutes } from './routes/previews';
 import { registerPublishRoutes } from './routes/publish';
+import { registerTrashRoutes } from './routes/trash';
 import { cleanupExpiredImageTrash } from './trash/cleanup';
 import {
   jsonSchema,
@@ -496,6 +497,7 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
   await registerPostRoutes(app, { config, database, repository, history });
   await registerClipRoutes(app, { config, repository, history });
   await registerImageRoutes(app, { config, repository });
+  await registerTrashRoutes(app, { config, repository });
   await registerPreviewRoutes(app, config);
   await registerBackupRoutes(app, config);
   const publishRoutes = await registerPublishRoutes(app, { config, database, buildGate });

@@ -1,4 +1,4 @@
-﻿import { DatabaseSync } from 'node:sqlite';
+import { DatabaseSync } from 'node:sqlite';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -62,7 +62,7 @@ describe('admin API client contract', () => {
   it('returns paged post lists and accepts the structured editor payload', async () => {
     const { app, database } = await fixture();
     const list = await app.inject({ method: 'GET', url: '/api/posts?status=draft&page=1' });
-    expect(list.json()).toMatchObject({ total: 1, page: 1, pageSize: 50, items: [{ slug: 'owner' }] });
+    expect(list.json()).toMatchObject({ total: 1, page: 1, pageSize: 50, counts: { all: 1, published: 0, drafts: 1, deleted: 0 }, items: [{ slug: 'owner' }] });
 
     const created = await app.inject({
       method: 'POST',
@@ -85,6 +85,86 @@ describe('admin API client contract', () => {
     database.close();
   });
 
+  it('renders same-site public image Markdown through the admin media route', async () => {
+    const { app, database } = await fixture();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/previews/instant',
+      headers: writeHeaders,
+      payload: {
+        markdown: '![preview](https://blog.reaier.top/media/unpublished.webp)',
+      },
+    });
+
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json().html).toContain('src=\"/media/unpublished.webp\"');
+    expect(response.json().html).not.toContain('src=\"https://blog.reaier.top/media/unpublished.webp\"');
+    await app.close();
+    database.close();
+  });
+  it('records editor history only for explicitly manual saves', async () => {
+    const { app, database } = await fixture();
+    const owner = await app.inject({ method: 'GET', url: '/api/posts/owner' });
+    const autosaved = await app.inject({
+      method: 'PUT',
+      url: '/api/posts/owner',
+      headers: { ...writeHeaders, 'if-match': owner.json().revision },
+      payload: { ...postInput('owner', 'Owner'), body: '# Autosaved\n' },
+    });
+    expect(autosaved.statusCode, autosaved.body).toBe(200);
+    expect((await app.inject({ method: 'GET', url: '/api/posts/owner/history' })).json()).toEqual([]);
+
+    const manuallySaved = await app.inject({
+      method: 'PUT',
+      url: '/api/posts/owner',
+      headers: {
+        ...writeHeaders,
+        'if-match': autosaved.json().revision,
+        'x-history-mode': 'manual',
+        'x-history-group': 'manual-test',
+      },
+      payload: { ...postInput('owner', 'Owner'), body: '# Manual\n' },
+    });
+    expect(manuallySaved.statusCode, manuallySaved.body).toBe(200);
+    expect((await app.inject({ method: 'GET', url: '/api/posts/owner/history' })).json()).toMatchObject([
+      { revisionNumber: 1, groupId: 'manual-test' },
+    ]);    const manualRevision = await app.inject({
+      method: 'GET',
+      url: '/api/posts/owner/history/1',
+    });
+    expect(manualRevision.statusCode, manualRevision.body).toBe(200);
+    expect(manualRevision.json()).toMatchObject({
+      body: '# Manual\n',
+      content: expect.stringMatching(/^---/),
+    });
+
+    const autoCreated = await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: writeHeaders,
+      payload: postInput('auto-created'),
+    });
+    expect(autoCreated.statusCode, autoCreated.body).toBe(201);
+    expect((await app.inject({ method: 'GET', url: '/api/posts/auto-created/history' })).json()).toEqual([]);
+
+    const manualCreated = await app.inject({
+      method: 'POST',
+      url: '/api/posts',
+      headers: {
+        ...writeHeaders,
+        'x-history-mode': 'manual',
+        'x-history-group': 'manual-create',
+      },
+      payload: postInput('manual-created'),
+    });
+    expect(manualCreated.statusCode, manualCreated.body).toBe(201);
+    expect((await app.inject({ method: 'GET', url: '/api/posts/manual-created/history' })).json()).toMatchObject([
+      { revisionNumber: 1, groupId: 'manual-create' },
+    ]);
+
+    await app.close();
+    database.close();
+  });
   it('lists soft-deleted posts and restores them with revision checks', async () => {
     const { app, database } = await fixture();
     const owner = await app.inject({ method: 'GET', url: '/api/posts/owner' });
@@ -97,7 +177,7 @@ describe('admin API client contract', () => {
     expect(deleted.json()).toMatchObject({ slug: 'owner', deleted: true });
 
     const trash = await app.inject({ method: 'GET', url: '/api/posts?includeDeleted=true' });
-    expect(trash.json()).toMatchObject({ items: [{ slug: 'owner', deleted: true }] });
+    expect(trash.json()).toMatchObject({ counts: { all: 0, published: 0, drafts: 0, deleted: 1 }, items: [{ slug: 'owner', deleted: true }] });
     const restored = await app.inject({
       method: 'POST',
       url: '/api/posts/owner/restore',
@@ -129,10 +209,61 @@ describe('admin API client contract', () => {
       },
     });
     expect(created.statusCode, created.body).toBe(201);
-    expect(created.json()).toMatchObject({ slug: 'sample', revision: expect.any(String), references: [{ postSlug: 'owner', kind: 'body' }] });
+    expect(created.json()).toMatchObject({ slug: 'sample', revision: expect.any(String) });
+    expect(created.json()).not.toHaveProperty('references');
     const updatedOwner = await app.inject({ method: 'GET', url: '/api/posts/owner' });
     expect(updatedOwner.json().body).toContain('```clip');
     expect(updatedOwner.json().body).toContain('slug: sample');
+    await app.close();
+    database.close();
+  });
+
+  it('returns the updated article after attaching an existing Clip', async () => {
+    const { app, database } = await fixture();
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/clips',
+      headers: writeHeaders,
+      payload: {
+        slug: 'shared-answer',
+        title: 'Shared answer',
+        description: 'Reusable source.',
+        language: 'typescript',
+        file: 'answer.ts',
+        createdAt: '2026-08-17',
+        code: 'export const answer = 42;\n',
+      },
+    });
+    expect(created.statusCode, created.body).toBe(201);
+    const owner = await app.inject({ method: 'GET', url: '/api/posts/owner' });
+
+    const attached = await app.inject({
+      method: 'POST',
+      url: '/api/posts/owner/clip-references',
+      headers: writeHeaders,
+      payload: {
+        clipSlug: 'shared-answer',
+        expectedPostRevision: owner.json().revision,
+        insertOffset: owner.json().body.length,
+      },
+    });
+
+    expect(attached.statusCode, attached.body).toBe(200);
+    expect(attached.json()).toMatchObject({
+      slug: 'owner',
+      body: expect.stringContaining('slug: shared-answer'),
+    });
+    expect(attached.json().revision).not.toBe(owner.json().revision);
+
+    const preview = await app.inject({
+      method: 'POST',
+      url: '/api/previews/instant',
+      headers: writeHeaders,
+      payload: { markdown: attached.json().body },
+    });
+    expect(preview.statusCode, preview.body).toBe(200);
+    expect(preview.json().html).toContain('data-clip-card');
+    expect(preview.json().html).not.toContain('即时预览生成失败');
     await app.close();
     database.close();
   });
@@ -330,6 +461,65 @@ describe('admin API client contract', () => {
     expect(dashboard.statusCode).toBe(200);
     expect(dashboard.json()).toMatchObject({
       latestPublish: { id: 'persisted-job', status: 'succeeded', release: 'release-1' },
+    });
+    await app.close();
+    database.close();
+  });
+  it('marks persisted active publish jobs as interrupted when routes restart', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'admin-publish-recovery-'));
+    roots.push(root);
+    const contentRoot = join(root, 'content');
+    for (const name of ['blog', 'clips', 'images']) await mkdir(join(contentRoot, name), { recursive: true });
+    const database = new DatabaseSync(':memory:');
+    migrateAdminDatabase(database);
+    database.exec(`
+      CREATE TABLE publish_job_state (
+        id TEXT PRIMARY KEY,
+        status TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        release_id TEXT,
+        log TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        started_at TEXT,
+        finished_at TEXT
+      ) STRICT;
+    `);
+    database.prepare(`
+      INSERT INTO publish_job_state (
+        id, status, content_hash, release_id, log,
+        created_at, started_at, finished_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      'interrupted-job',
+      'preparing',
+      'b'.repeat(64),
+      null,
+      '',
+      '2026-08-16T14:35:51.947Z',
+      null,
+      null,
+    );
+
+    const app = await buildServer({
+      config: createAdminConfig({
+        contentRoot,
+        dataRoot: root,
+        projectRoot: process.cwd(),
+        publicOrigin: 'https://admin.blog.reaier.top',
+        secureCookies: false,
+      }),
+      database,
+      repository: createContentRepository({ root: contentRoot }),
+      authOverride: async () => ({ adminId: 1, username: 'owner', csrfToken: 'csrf' }),
+    });
+
+    const response = await app.inject({ method: 'GET', url: '/api/publish/jobs/interrupted-job' });
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json()).toMatchObject({
+      id: 'interrupted-job',
+      status: 'failed',
+      finishedAt: expect.any(String),
+      log: ['Publish interrupted because the admin service restarted.'],
     });
     await app.close();
     database.close();

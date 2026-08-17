@@ -1,4 +1,4 @@
-﻿export interface SessionUser {
+export interface SessionUser {
   username: string;
   displayName?: string;
   csrfToken?: string;
@@ -52,6 +52,15 @@ export interface PostSummary {
   deleted?: boolean;
 }
 
+export interface PostPageResult extends PageResult<PostSummary> {
+  counts: {
+    all: number;
+    published: number;
+    drafts: number;
+    deleted: number;
+  };
+}
+
 export interface PostDocument extends PostSummary {
   body: string;
   cover?: string;
@@ -71,7 +80,6 @@ export interface ClipSummary {
   file: string;
   updatedAt?: string;
   revision: string;
-  references: Array<{ postSlug: string; kind: 'body' }>;
 }
 
 export interface ClipPageResult extends PageResult<ClipSummary> {
@@ -100,18 +108,33 @@ export interface ImageAsset {
   originalName: string;
   url: string;
   markdownPath: string;
+  relativePath?: string;
+  publicUrl: string;
   width: number;
   height: number;
   byteSize: number;
   createdAt: string;
-  references: Array<{ postSlug: string; kind: 'body' | 'cover' }>;
+}
+
+
+export type TrashItemType = 'post' | 'clip' | 'image';
+
+export interface TrashItem {
+  id: string;
+  type: TrashItemType;
+  title: string;
+  detail: string;
+  deletedAt: string;
+}
+
+export interface TrashResult {
+  items: TrashItem[];
 }
 
 export interface BackupRecord {
   id: string;
   name: string;
   createdAt: string;
-  references?: Array<{ postSlug: string; kind: 'body' | 'cover' }>;
   byteSize: number;
   fileCount: number;
   downloadUrl: string;
@@ -126,9 +149,10 @@ export interface PostHistoryEntry {
 
 export interface PostHistoryRevision extends PostHistoryEntry {
   content: string;
+  body: string;
 }
 
-export type PublishStatus = 'queued' | 'validating' | 'building' | 'switching' | 'succeeded' | 'failed';
+export type PublishStatus = 'preparing' | 'queued' | 'validating' | 'building' | 'switching' | 'succeeded' | 'failed';
 
 export interface PublishJob {
   id: string;

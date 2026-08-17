@@ -1,31 +1,7 @@
-﻿export interface ClipFenceInput {
-  title: string;
-  description: string;
-  language: string;
-  file: string;
-  createdAt: string;
-}
-
 export interface ImageMarkdownInput {
   alt: string;
   path: string;
   title?: string;
-}
-
-function cleanLine(value: string) {
-  return value.replace(/[\r\n]+/g, ' ').trim();
-}
-
-export function createClipFence(input: ClipFenceInput) {
-  return [
-    '```clip',
-    `title: ${cleanLine(input.title)}`,
-    `description: ${cleanLine(input.description)}`,
-    `language: ${cleanLine(input.language)}`,
-    `file: ${cleanLine(input.file)}`,
-    `createdAt: ${cleanLine(input.createdAt)}`,
-    '```',
-  ].join('\n');
 }
 
 export function createImageMarkdown(input: ImageMarkdownInput) {
@@ -35,10 +11,21 @@ export function createImageMarkdown(input: ImageMarkdownInput) {
   return `![${alt}](${path}${title ? ` "${title}"` : ''})`;
 }
 
-export function isSaveShortcut(event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey'>) {
-  return (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's';
+export function normalizeManagedImagePath(value?: string) {
+  if (!value) return '';
+  return value
+    .replaceAll('\\', '/')
+    .replace(/^\.\.\/images\//, '')
+    .replace(/^\.\//, '')
+    .replace(/^\/media\//, '')
+    .replace(/^images\//, '')
+    .replace(/^\//, '');
 }
 
+export function imageAssetMatchesPath(asset: { markdownPath: string; relativePath?: string; url: string }, value?: string) {
+  const target = normalizeManagedImagePath(value);
+  return Boolean(target) && [asset.markdownPath, asset.relativePath, asset.url].some((path) => normalizeManagedImagePath(path) === target);
+}
 
 export function normalizeCodeLanguage(value: string | undefined): string | undefined {
   const language = value?.trim().toLowerCase();
