@@ -12,7 +12,7 @@ This change covers three existing surfaces:
 - the article list on `/posts`;
 - the clipboard list on `/clips`.
 
-Search, filters, imports, bulk selection, routing, deletion confirmation, API requests, and editor behavior remain unchanged. Dashboard statistic cards, publishing controls, and unrelated admin pages are outside this scope.
+Search, filters, imports, routing, deletion confirmation, API requests, and editor behavior remain unchanged. Dashboard statistic cards, publishing controls, and unrelated admin pages are outside this scope.
 
 ## Visual Direction
 
@@ -30,9 +30,9 @@ A desktop row has three regions:
 
 1. **Metadata rail** — sequence number or date information in compact text.
 2. **Primary content** — title followed by slug, file path, description, publish date, or other secondary detail.
-3. **Resource metadata and actions** — status, tags, language, selection, and management controls.
+3. **Resource metadata and actions** — status, tags, language, and management controls.
 
-The whole non-action area remains an ordinary React Router link. Controls such as checkboxes and delete buttons stay outside the stretched navigation target, retain their own stacking context, and stop navigation naturally. Dangerous actions remain visually distinct and never become part of the row link.
+The whole non-action area remains an ordinary React Router link. Controls such as delete buttons stay outside the stretched navigation target, retain their own stacking context, and stop navigation naturally. Dangerous actions remain visually distinct and never become part of the row link.
 
 ## Dashboard Recent Posts
 
@@ -49,16 +49,16 @@ Compared with the current compact story rows, vertical spacing increases modestl
 
 ## Article List
 
-Remove the visible table header and present articles as continuous editorial rows. Preserve all current data and functionality, including filtering and bulk selection.
+Remove the visible table header and present articles as continuous editorial rows. Preserve all current data and functionality, including filtering.
 
 Each article row displays:
 
-- selection control and publication/update date in the metadata rail;
+- publication/update date in the metadata rail;
 - title plus description or slug in the primary region;
 - draft/live status and tags in the trailing metadata region;
 - existing management actions in a protected action area.
 
-The row's main link opens the article editor. Selection and management controls must not trigger navigation. Bulk-selection accessibility must remain understandable without relying on a visible table header; each checkbox therefore keeps an article-specific accessible label.
+The row's main link opens the article editor. Any future management controls must remain outside the navigation target.
 
 ## Clipboard List
 
@@ -101,10 +101,10 @@ Hover effects are progressive enhancement. Touch layouts remain clear without re
 
 ## Accessibility
 
-- Use native links, buttons, and checkboxes rather than click handlers on generic containers.
+- Use native links and buttons rather than click handlers on generic containers.
 - Provide a clear `:focus-visible` indication for the row's primary link and every action.
 - Make hover and focus-within styling equivalent without obscuring individual control focus.
-- Preserve article-specific labels for selection and delete actions.
+- Preserve resource-specific accessible labels for navigation and delete actions.
 - Do not communicate draft/live state through color alone; status text remains visible.
 - Maintain sufficient contrast in both themes.
 - Respect `prefers-reduced-motion`.
@@ -115,7 +115,7 @@ Add or update tests to verify:
 
 1. dashboard recent posts retain their editor destinations and status text;
 2. article and clipboard indexes use editorial list markup rather than data-table markup;
-3. article selection and delete/import controls retain their accessible labels and behavior;
+3. article filtering and import controls retain their accessible labels and behavior;
 4. clipboard deletion remains a separate control from row navigation;
 5. shared hover, focus-within, dark/light theme, responsive, and reduced-motion CSS contracts exist;
 6. admin TypeScript checking, Vitest, and the production builds continue to pass.
@@ -132,3 +132,4 @@ Implementation is expected to touch only the relevant areas, primarily:
 - relevant tests under `tests/`.
 
 Existing unrelated uncommitted work in the repository must be preserved.
+
