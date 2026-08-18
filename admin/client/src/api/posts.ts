@@ -60,4 +60,7 @@ export const postsApi = {
     '/previews/instant',
     { method: 'POST', body: { markdown } },
   ),
+  previewPost: (slug: string) => request<PreviewResponse>(
+    `/posts/${encodeURIComponent(slug)}/preview`,
+  ),
 };

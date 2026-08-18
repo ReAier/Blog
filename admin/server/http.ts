@@ -3,6 +3,7 @@ import { stat } from 'node:fs/promises';
 import type { FastifyRequest } from 'fastify';
 import sharp from 'sharp';
 import type { ClipDocument, PostDocument } from '../shared/content-types';
+import type { AdminPermission, AdminRole } from './auth/admin-keys';
 import type { AdminConfig } from './config';
 import type { ContentRepository } from './content/repository';
 import { ContentValidationError } from './content/errors';
@@ -12,6 +13,9 @@ import { combinedClipRevision } from './content/transactions';
 export interface Authenticated {
   adminId: number;
   username: string;
+  keyId?: string;
+  role?: AdminRole;
+  permissions?: AdminPermission[];
   csrfToken?: string;
   csrfTokenHash?: string;
   sessionId?: number;

@@ -32,6 +32,8 @@
 :root[data-theme='light'] {
   color-scheme: light;
   --admin-canvas: #f4f1eb;
+  --glass-control: rgba(255, 255, 255, .5);
+  --glass-border-strong: rgba(23, 24, 22, .22);
   --bg: var(--admin-canvas);
   --surface: rgba(255, 254, 250, .82);
   --surface-solid: #fffefa;
@@ -69,6 +71,9 @@
   --terminal-surface: #202326;
   --scrim: rgba(32, 29, 25, .46);
   --subtle-fill: rgba(23, 24, 22, .045);
+  --editorial-row-surface: rgba(255, 254, 250, .34);
+  --editorial-row-hover: linear-gradient(90deg, rgba(var(--accent-rgb), .1), rgba(var(--accent-rgb), .035) 56%, transparent);
+  --editorial-row-accent: var(--accent);
   --editor-text: #20231f;
   --editor-muted: #687069;
   --editor-caret: var(--accent);
@@ -99,6 +104,8 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
   --admin-canvas: #090c0e;
+  --glass-control: rgba(255, 255, 255, .055);
+  --glass-border-strong: rgba(255, 255, 255, .24);
   --bg: var(--admin-canvas);
   --surface: rgba(16, 19, 21, .88);
   --surface-solid: #121619;
@@ -136,6 +143,9 @@
   --terminal-surface: #090c0e;
   --scrim: rgba(4, 6, 8, .78);
   --subtle-fill: rgba(255, 255, 255, .035);
+  --editorial-row-surface: rgba(10, 13, 15, .28);
+  --editorial-row-hover: linear-gradient(90deg, rgba(var(--accent-rgb), .16), rgba(var(--accent-rgb), .055) 58%, transparent);
+  --editorial-row-accent: color-mix(in srgb, var(--accent) 88%, #fff);
   --editor-text: #f4f2ed;
   --editor-muted: #858b91;
   --editor-caret: #e16491;

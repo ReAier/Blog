@@ -11,14 +11,14 @@ async function source(relativePath: string) {
 }
 
 describe('blog-styled form control integration', () => {
-  it('uses a neutral API token example and the shared themed select', async () => {
+  it('uses a neutral automation-key example and the shared themed select', async () => {
     const security = await source('pages/SecurityPage.tsx');
 
     expect(security).toContain("import { BlogSelect } from '../components/BlogSelect'");
     expect(security).toContain('例如：文章草稿助手');
     expect(security).not.toContain('Claude');
     expect(security).not.toMatch(/<select[\s>]/);
-    expect(security).toContain('<div className="field">\n            <span>有效期</span>');
+    expect(security).toMatch(/<span>有效期<\/span>[\s\S]{0,200}<BlogSelect/);
   });
 
   it('replaces every native admin date input with the shared themed date field', async () => {

@@ -1,18 +1,27 @@
-﻿import { readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 
 describe('AI REST API documentation', () => {
   it('documents token lifecycle, scopes, OpenAPI, concurrency, limits and the publish boundary', async () => {
-    const [readme, guide, admin, architecture] = await Promise.all([
+    const [readme, guide, admin, architecture, environment] = await Promise.all([
       readFile('README.md', 'utf8'),
       readFile('docs/ai-api.md', 'utf8'),
       readFile('docs/admin-backend.md', 'utf8'),
       readFile('docs/architecture.md', 'utf8'),
+      readFile('.env.example', 'utf8'),
     ]);
 
     expect(readme).toContain('[AI REST API](docs/ai-api.md)');
+    expect(readme).toContain('npm run admin:key -- create');
+    expect(readme).not.toContain('npm run admin:init');
+    expect(admin).toContain('Admin database:');
+    expect(admin).toContain('--data-root /var/lib/aier-blog');
+    expect(admin).toContain('PowerShell');
+    expect(architecture).toContain('`er-`');
+    expect(architecture).toContain('`ai-`');
+    expect(environment).not.toContain('ADMIN_MASTER_KEY');
     for (const value of [
-      'aier_pat_',
+      'ai-',
       'posts:read',
       'posts:write',
       'clips:read',

@@ -1,26 +1,16 @@
+export type AdminRole = 'viewer' | 'editor' | 'publisher' | 'owner' | 'custom';
+
+export type AdminPermission = string;
+
 export interface SessionUser {
+  id?: string;
   username: string;
-  displayName?: string;
+  role?: AdminRole;
+  permissions: AdminPermission[];
   csrfToken?: string;
 }
 
-export interface AdminSetupStatus {
-  required: boolean;
-  tokenReady: boolean;
-}
 
-export interface AdminSetupChallenge {
-  challenge: string;
-  totpSecret: string;
-  otpauthUri: string;
-  expiresAt: number;
-}
-
-export interface AdminSetupConfirmation extends SessionUser {
-  recoveryCodes: string[];
-  idleExpiresAt: number;
-  absoluteExpiresAt: number;
-}
 export interface PageResult<T> {
   items: T[];
   total: number;
@@ -184,6 +174,8 @@ export interface DashboardSnapshot {
   recentPosts: PostSummary[];
   latestPublish?: PublishJob;
   storageBytes?: number;
+  clipStorageBytes?: number;
+  imageStorageBytes?: number;
 }
 
 export interface PreviewResponse {
@@ -208,7 +200,7 @@ export interface ApiTokenRecord {
   tokenPrefix: string;
   scopes: ApiTokenScope[];
   createdAt: number;
-  expiresAt: number;
+  expiresAt?: number;
   lastUsedAt?: number;
   revokedAt?: number;
 }
@@ -216,4 +208,22 @@ export interface ApiTokenRecord {
 export interface ApiTokenCreation {
   token: string;
   record: ApiTokenRecord;
+}
+
+export interface AdminKeyRecord {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  role: AdminRole;
+  permissions: AdminPermission[];
+  createdAt: number;
+  expiresAt?: number;
+  lastUsedAt?: number;
+  revokedAt?: number;
+  createdByKeyId?: string;
+}
+
+export interface AdminKeyCreation {
+  key: string;
+  record: AdminKeyRecord;
 }

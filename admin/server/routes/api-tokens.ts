@@ -4,6 +4,7 @@ import {
   createApiToken,
   listApiTokens,
   revokeApiToken,
+  updateApiToken,
   type ApiTokenScope,
 } from '../auth/api-tokens';
 import { adminAuth } from '../http';
@@ -29,17 +30,17 @@ export async function registerApiTokenRoutes(
   app: FastifyInstance,
   database: DatabaseSync,
 ): Promise<void> {
-  app.get('/api/auth/tokens', {
+  app.get('/api/auth/ai-keys', {
     schema: jsonSchema({ response: 'array' }),
   }, async () => listApiTokens(database));
 
-  app.post('/api/auth/tokens', {
+  app.post('/api/auth/ai-keys', {
     schema: jsonSchema({ body: apiTokenCreateBodySchema }),
   }, async (request, reply) => {
     const body = request.body as {
       name: string;
       scopes: ApiTokenScope[];
-      expiresInDays?: number;
+      expiresInDays?: 7 | 30 | 365 | null;
     };
     const created = createApiToken(database, body);
     const auth = adminAuth(request);
@@ -57,7 +58,16 @@ export async function registerApiTokenRoutes(
     return reply.code(201).send(created);
   });
 
-  app.delete('/api/auth/tokens/:id', {
+
+  app.patch('/api/auth/ai-keys/:id', {
+    schema: jsonSchema({ params: idParamsSchema }),
+  }, async (request, reply) => {
+    const id = (request.params as { id: string }).id;
+    const updated = updateApiToken(database, id, request.body as { name?: string; scopes?: ApiTokenScope[]; expiresAt?: number | null });
+    return updated ?? reply.code(404).send({ code: 'API_TOKEN_NOT_FOUND' });
+  });
+
+  app.delete('/api/auth/ai-keys/:id', {
     schema: jsonSchema({ params: idParamsSchema }),
   }, async (request, reply) => {
     const id = (request.params as { id: string }).id;

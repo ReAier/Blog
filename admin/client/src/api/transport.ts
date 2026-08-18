@@ -3,8 +3,6 @@ const csrfStorageKey = 'aier-admin-csrf';
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const csrfExemptPaths = new Set([
   '/auth/login',
-  '/auth/setup/begin',
-  '/auth/setup/confirm',
 ]);
 const transientGatewayStatuses = new Set([502, 503, 504]);
 const retryableMethods = new Set(['GET', 'HEAD', 'OPTIONS']);

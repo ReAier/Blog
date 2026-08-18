@@ -1,5 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
+import PostCard from '../components/PostCard.astro';
+import PostListItem from '../components/PostListItem.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { SITE } from '../config';
 import { sortPostsNewestFirst } from '../lib/content';
@@ -7,7 +9,6 @@ import { sortPostsRecentlyUpdated } from '../lib/recent-updates';
 const posts = sortPostsNewestFirst((await getCollection('blog')).filter((post) => !post.data.draft));
 const featured = posts.filter((post) => post.data.featured).slice(0, 2);
 const latest = sortPostsRecentlyUpdated(posts).slice(0, 4);
-const formatDate = (date: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 ---
 <BaseLayout>
   <section class="hero" data-hero>
@@ -25,7 +26,7 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'num
   {featured.length > 0 && <section class="section">
     <div class="container">
       <div class="section-head"><div><p class="eyebrow">Selected notes</p><h2 class="section-title">精选文章</h2></div><a class="text-link" href="/posts/">浏览全部 →</a></div>
-      <div class="post-grid">{featured.map((post) => <article class="post-card" data-motion-card><div class="post-meta"><time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time><span>{post.data.tags[0]}</span></div><h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3><p>{post.data.description}</p></article>)}</div>
+      <div class="post-grid">{featured.map((post) => <PostCard post={post} headingLevel={3} tagLimit={1} />)}</div>
     </div>
   </section>}
   <section class="section home-latest">
@@ -35,21 +36,7 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat('zh-CN', { year: 'num
         <a class="text-link" href="/posts/">浏览全部 →</a>
       </div>
       <ol class="post-list post-list--compact">
-        {latest.map((post) => (
-          <li class="post-list-item">
-            <a class="post-list-item__link" href={`/posts/${post.id}/`}>
-              <span class="post-list-item__dates">
-                <time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time>
-                {post.data.updatedAt && <span>更新于 {formatDate(post.data.updatedAt)}</span>}
-              </span>
-              <span class="post-list-item__content">
-                <h2>{post.data.title}</h2>
-                <span class="post-list-item__description">{post.data.description}</span>
-              </span>
-              {post.data.tags.length > 0 && <span class="post-list-item__tags" aria-label="标签">{post.data.tags.join(' · ')}</span>}
-            </a>
-          </li>
-        ))}
+        {latest.map((post) => <PostListItem post={post} />)}
       </ol>
     </div>
   </section>

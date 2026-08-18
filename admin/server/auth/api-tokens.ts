@@ -18,7 +18,7 @@ export interface ApiTokenRecord {
   tokenPrefix: string;
   scopes: ApiTokenScope[];
   createdAt: number;
-  expiresAt: number;
+  expiresAt?: number;
   lastUsedAt?: number;
   revokedAt?: number;
 }
@@ -29,7 +29,7 @@ interface ApiTokenRow {
   token_prefix: string;
   scopes_json: string;
   created_at: number;
-  expires_at: number;
+  expires_at: number | null;
   last_used_at: number | null;
   revoked_at: number | null;
 }
@@ -56,7 +56,7 @@ function presentToken(row: ApiTokenRow): ApiTokenRecord {
     tokenPrefix: row.token_prefix,
     scopes: JSON.parse(row.scopes_json) as ApiTokenScope[],
     createdAt: row.created_at,
-    expiresAt: row.expires_at,
+    expiresAt: row.expires_at ?? undefined,
     lastUsedAt: row.last_used_at ?? undefined,
     revokedAt: row.revoked_at ?? undefined,
   };
@@ -64,25 +64,25 @@ function presentToken(row: ApiTokenRow): ApiTokenRecord {
 
 export function createApiToken(
   database: DatabaseSync,
-  input: { name: string; scopes: ApiTokenScope[]; expiresInDays?: number },
+  input: { name: string; scopes: ApiTokenScope[]; expiresInDays?: 7 | 30 | 365 | null },
   now = Date.now(),
 ): { token: string; record: ApiTokenRecord } {
   const name = input.name.trim();
   if (!name || name.length > 100) throw new Error('API token name must be between 1 and 100 characters.');
-  const expiresInDays = input.expiresInDays ?? 30;
-  if (!Number.isInteger(expiresInDays) || expiresInDays < 1 || expiresInDays > 365) {
-    throw new Error('API token expiry must be between 1 and 365 days.');
+  const expiresInDays = input.expiresInDays === undefined ? 30 : input.expiresInDays;
+  if (expiresInDays !== null && ![7, 30, 365].includes(expiresInDays)) {
+    throw new Error('API token expiry must be 7, 30, 365 days or permanent.');
   }
   const scopes = normalizeScopes(input.scopes);
   const secret = randomBytes(32).toString('base64url');
-  const token = `aier_pat_${secret}`;
+  const token = `ai-${secret}`;
   const record: ApiTokenRecord = {
     id: randomUUID(),
     name,
-    tokenPrefix: `aier_pat_${secret.slice(0, 8)}`,
+    tokenPrefix: `ai-${secret.slice(0, 8)}`,
     scopes,
     createdAt: now,
-    expiresAt: now + expiresInDays * dayMs,
+    expiresAt: expiresInDays === null ? undefined : now + expiresInDays * dayMs,
     lastUsedAt: undefined,
     revokedAt: undefined,
   };
@@ -98,7 +98,7 @@ export function createApiToken(
     hashToken(token),
     JSON.stringify(record.scopes),
     record.createdAt,
-    record.expiresAt,
+    record.expiresAt ?? null,
   );
   return { token, record };
 }
@@ -127,14 +127,14 @@ export function resolveApiToken(
   token: string,
   now = Date.now(),
 ): ApiTokenRecord | null {
-  if (!token.startsWith('aier_pat_')) return null;
+  if (!/^ai-[A-Za-z0-9_-]{43}$/.test(token)) return null;
   const row = database.prepare(`
     SELECT id, name, token_prefix, scopes_json, created_at,
            expires_at, last_used_at, revoked_at
     FROM api_tokens
     WHERE token_hash = ?
   `).get(hashToken(token)) as unknown as ApiTokenRow | undefined;
-  if (!row || row.revoked_at !== null || row.expires_at <= now) return null;
+  if (!row || row.revoked_at !== null || row.expires_at !== null && row.expires_at <= now) return null;
   database.prepare('UPDATE api_tokens SET last_used_at = ? WHERE id = ?').run(now, row.id);
   return { ...presentToken(row), lastUsedAt: now };
 }
@@ -147,4 +147,18 @@ export function authenticateApiToken(
 ): ApiTokenRecord | null {
   const record = resolveApiToken(database, token, now);
   return record?.scopes.includes(requiredScope) ? record : null;
+}
+
+
+export function updateApiToken(database: DatabaseSync, id: string, input: {
+  name?: string; scopes?: ApiTokenScope[]; expiresAt?: number | null;
+}): ApiTokenRecord | null {
+  const row = database.prepare('SELECT id, name, token_prefix, scopes_json, created_at, expires_at, last_used_at, revoked_at FROM api_tokens WHERE id = ?').get(id) as unknown as ApiTokenRow | undefined;
+  if (!row || row.revoked_at !== null) return null;
+  const name = input.name?.trim() ?? row.name;
+  const scopes = input.scopes ? normalizeScopes(input.scopes) : JSON.parse(row.scopes_json) as ApiTokenScope[];
+  database.prepare('UPDATE api_tokens SET name = ?, scopes_json = ?, expires_at = ? WHERE id = ?')
+    .run(name, JSON.stringify(scopes), input.expiresAt === undefined ? row.expires_at : input.expiresAt, id);
+  const updated = database.prepare('SELECT id, name, token_prefix, scopes_json, created_at, expires_at, last_used_at, revoked_at FROM api_tokens WHERE id = ?').get(id) as unknown as ApiTokenRow;
+  return presentToken(updated);
 }

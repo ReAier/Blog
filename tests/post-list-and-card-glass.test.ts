@@ -6,13 +6,16 @@ const read = (path: string) => readFile(new URL(`../${path}`, import.meta.url), 
 describe('post index list contract', () => {
   it('renders the posts page as a semantic information list instead of cards', async () => {
     const page = await read('src/pages/posts/index.astro');
+    const item = await read('src/components/PostListItem.astro');
 
     expect(page).toContain('<ol class="post-list"');
-    expect(page).toContain('class="post-list-item"');
-    expect(page).toContain('class="post-list-item__link"');
-    expect(page).toContain('post.data.description');
-    expect(page).toContain('post.data.tags');
-    expect(page).toContain('post.data.updatedAt');
+    expect(page).toContain("import PostListItem from '../../components/PostListItem.astro'");
+    expect(page).toContain('<PostListItem post={post} />');
+    expect(item).toContain('<li class="post-list-item"');
+    expect(item).toContain('class="post-list-item__link"');
+    expect(item).toContain('post.data.description');
+    expect(item).toContain('post.data.tags');
+    expect(item).toContain('post.data.updatedAt');
     expect(page).not.toContain("import PostCard from '../../components/PostCard.astro'");
     expect(page).not.toContain('post-grid');
     expect(page).not.toContain('post-card');
@@ -34,16 +37,17 @@ describe('post index list contract', () => {
 describe('home latest writing list contract', () => {
   it('renders recent writing as a compact semantic list without motion cards', async () => {
     const page = await read('src/pages/index.astro');
+    const item = await read('src/components/PostListItem.astro');
     const latestSection = page.slice(page.indexOf('<section class="section home-latest">'));
 
     expect(latestSection).toContain('<ol class="post-list post-list--compact"');
-    expect(latestSection).toContain('class="post-list-item__link"');
+    expect(latestSection).toContain('<PostListItem post={post} />');
     expect(page).toContain('sortPostsRecentlyUpdated(posts).slice(0, 4)');
-    expect(latestSection).toContain('post.data.publishedAt');
-    expect(latestSection).toContain('post.data.updatedAt');
-    expect(latestSection).toContain('post.data.title');
-    expect(latestSection).toContain('post.data.description');
-    expect(latestSection).toContain("post.data.tags.join(' · ')");
+    expect(item).toContain('post.data.publishedAt');
+    expect(item).toContain('post.data.updatedAt');
+    expect(item).toContain('post.data.title');
+    expect(item).toContain('post.data.description');
+    expect(item).toContain("post.data.tags.join(' · ')");
     expect(latestSection).toContain('href="/posts/"');
     expect(latestSection).not.toContain('post-grid');
     expect(latestSection).not.toContain('post-card');

@@ -1,6 +1,6 @@
-﻿import type { DatabaseSync } from 'node:sqlite';
+import type { DatabaseSync } from 'node:sqlite';
 
-const migrationVersion = 3;
+const migrationVersion = 4;
 
 const versionOneMigrationSql = `
   CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -115,6 +115,55 @@ const versionThreeMigrationSql = `
   CREATE INDEX IF NOT EXISTS api_tokens_active_lookup_idx
     ON api_tokens (token_hash, expires_at, revoked_at);
 `;
+
+const versionFourMigrationSql = `
+  DELETE FROM sessions;
+  DELETE FROM api_tokens;
+  DELETE FROM recovery_codes;
+  DELETE FROM login_attempts;
+  DELETE FROM admin_setup_tokens;
+  DELETE FROM admin_setup_challenges;
+  UPDATE admins SET password_hash = 'disabled', totp_secret_encrypted = 'disabled';
+
+  ALTER TABLE sessions ADD COLUMN admin_key_id TEXT;
+
+  ALTER TABLE api_tokens RENAME TO legacy_api_tokens;
+  DROP INDEX IF EXISTS api_tokens_active_lookup_idx;
+  CREATE TABLE api_tokens (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    token_prefix TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    scopes_json TEXT NOT NULL CHECK (json_valid(scopes_json)),
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER,
+    last_used_at INTEGER,
+    revoked_at INTEGER
+  ) STRICT;
+  CREATE INDEX api_tokens_active_lookup_idx
+    ON api_tokens (token_hash, expires_at, revoked_at);
+  DROP TABLE legacy_api_tokens;
+
+  CREATE TABLE admin_keys (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    key_prefix TEXT NOT NULL,
+    key_hash TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL CHECK (role IN ('viewer', 'editor', 'publisher', 'owner', 'custom')),
+    permissions_json TEXT NOT NULL CHECK (json_valid(permissions_json)),
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER,
+    last_used_at INTEGER,
+    revoked_at INTEGER,
+    created_by_key_id TEXT REFERENCES admin_keys(id) ON DELETE SET NULL
+  ) STRICT;
+  CREATE INDEX admin_keys_active_lookup_idx
+    ON admin_keys (key_hash, expires_at, revoked_at);
+
+  ALTER TABLE audit_logs ADD COLUMN admin_key_id TEXT REFERENCES admin_keys(id) ON DELETE SET NULL;
+  ALTER TABLE revisions ADD COLUMN created_by_admin_key_id TEXT REFERENCES admin_keys(id) ON DELETE SET NULL;
+  ALTER TABLE publish_jobs ADD COLUMN requested_by_admin_key_id TEXT REFERENCES admin_keys(id) ON DELETE SET NULL;
+`;
 export function migrateAdminDatabase(
   database: DatabaseSync,
   appliedAt = Date.now(),
@@ -156,6 +205,13 @@ export function migrateAdminDatabase(
       database
         .prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)')
         .run(3, appliedAt);
+    }
+
+    if (currentVersion < 4) {
+      database.exec(versionFourMigrationSql);
+      database
+        .prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)')
+        .run(4, appliedAt);
     }
 
     database.exec(`PRAGMA user_version = ${migrationVersion}`);

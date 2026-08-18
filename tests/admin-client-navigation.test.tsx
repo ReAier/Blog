@@ -48,7 +48,7 @@ function testRouter() {
         { path: 'clips', element: <p>Clips 页面</p> },
         { path: 'images', element: <p>图片库页面</p> },
         { path: 'backups', element: <p>备份页面</p> },
-        { path: 'security', element: <p>API 与安全页面</p> },
+        { path: 'security', element: <p>密钥与安全页面</p> },
         { path: 'trash', element: <p>回收站页面</p> },
         { path: 'publish', element: <p>发布页面</p> },
         { path: 'login', element: <p>登录页面</p> },
@@ -79,7 +79,7 @@ describe('admin settings menu', () => {
 
     const primaryNavigation = screen.getByRole('navigation', { name: '主导航' });
     expect(within(primaryNavigation).queryByRole('link', { name: '备份' })).not.toBeInTheDocument();
-    expect(within(primaryNavigation).queryByRole('link', { name: 'API 与安全' })).not.toBeInTheDocument();
+    expect(within(primaryNavigation).queryByRole('link', { name: '密钥与安全' })).not.toBeInTheDocument();
     expect(screen.queryByText('责任编辑')).not.toBeInTheDocument();
     expect(screen.queryByText('owner')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '退出' })).not.toBeInTheDocument();
@@ -88,7 +88,7 @@ describe('admin settings menu', () => {
     const settings = screen.getByRole('navigation', { name: '设置菜单' });
     expect(within(settings).getByRole('link', { name: '回收站' })).toHaveAttribute('href', '/trash');
     expect(within(settings).getByRole('link', { name: '备份' })).toHaveAttribute('href', '/backups');
-    expect(within(settings).getByRole('link', { name: 'API 与安全' })).toHaveAttribute('href', '/security');
+    expect(within(settings).getByRole('link', { name: '密钥与安全' })).toHaveAttribute('href', '/security');
     expect(within(settings).getByRole('button', { name: '退出登录' })).toBeInTheDocument();
   });
 

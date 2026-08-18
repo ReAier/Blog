@@ -1,10 +1,31 @@
 ---
 import PostMeta from './PostMeta.astro';
-interface Props { post: { id: string; data: { title: string; description: string; publishedAt: Date; updatedAt?: Date; tags: string[] } }; }
-const { post } = Astro.props;
+import { resolveCoverUrl } from '../lib/image-paths';
+
+interface Props {
+  post: {
+    id: string;
+    data: {
+      title: string;
+      description: string;
+      publishedAt: Date;
+      updatedAt?: Date;
+      tags: string[];
+      cover?: string;
+    };
+  };
+  headingLevel?: 2 | 3;
+  tagLimit?: number;
+}
+
+const { post, headingLevel = 2, tagLimit } = Astro.props;
+const Heading = headingLevel === 3 ? 'h3' : 'h2';
+const cover = resolveCoverUrl(post.data.cover);
+const tags = tagLimit === undefined ? post.data.tags : post.data.tags.slice(0, tagLimit);
 ---
-<article class="post-card" data-motion-card>
-  <PostMeta publishedAt={post.data.publishedAt} updatedAt={post.data.updatedAt} tags={post.data.tags} />
-  <h2><a href={`/posts/${post.id}/`}>{post.data.title}</a></h2>
+<article class="post-card" data-motion-card data-has-cover={cover ? 'true' : undefined}>
+  {cover && <img class="post-card__cover" src={cover} alt="" loading="lazy" decoding="async" onerror="this.closest('[data-has-cover]')?.removeAttribute('data-has-cover'); this.setAttribute('hidden', '')" />}
+  <PostMeta publishedAt={post.data.publishedAt} updatedAt={post.data.updatedAt} tags={tags} />
+  <Heading><a href={`/posts/${post.id}/`}>{post.data.title}</a></Heading>
   <p>{post.data.description}</p>
 </article>

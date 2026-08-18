@@ -12,14 +12,12 @@
     "admin:dev": "vite --config admin/client/vite.config.ts",
     "admin:build": "vite build --config admin/client/vite.config.ts",
     "admin:server": "tsx admin/server/index.ts",
-    "admin:init": "tsx admin/cli/index.ts init",
-    "admin:reset": "tsx admin/cli/index.ts reset",
-    "admin:prepare-setup": "tsx admin/cli/index.ts prepare-setup",
     "admin:check": "tsc -p admin/client/tsconfig.json --noEmit && astro check",
     "upgrade": "tsx scripts/upgrade.ts",
     "admin:validate-content": "tsx admin/cli/validate-content.ts",
     "admin:content-hash": "tsx admin/cli/content-hash.ts",
-    "admin:migrate-independent-assets": "tsx admin/cli/migrate-independent-assets.ts"
+    "admin:migrate-independent-assets": "tsx admin/cli/migrate-independent-assets.ts",
+    "admin:key": "tsx admin/cli/key.ts"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.2.2",

@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 describe('admin SQLite migrations', () => {
-  it('creates the complete version-three state schema idempotently', () => {
+  it('creates the complete version-four state schema idempotently', () => {
     const database = createDatabase();
 
     migrateAdminDatabase(database);
@@ -34,6 +34,7 @@ describe('admin SQLite migrations', () => {
       .map((row) => String(row.name));
 
     expect(tables).toEqual([
+      'admin_keys',
       'admin_setup_challenges',
       'admin_setup_tokens',
       'admins',
@@ -46,7 +47,7 @@ describe('admin SQLite migrations', () => {
       'schema_migrations',
       'sessions',
     ]);
-    expect(database.prepare('PRAGMA user_version').get()).toEqual({ user_version: 3 });
+    expect(database.prepare('PRAGMA user_version').get()).toEqual({ user_version: 4 });
     expect(database.prepare('PRAGMA foreign_keys').get()).toEqual({ foreign_keys: 1 });
   });
 

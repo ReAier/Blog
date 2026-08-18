@@ -1,4 +1,4 @@
-﻿import {
+import {
   createHash,
   createHmac,
   randomBytes as cryptoRandomBytes,
@@ -16,6 +16,7 @@ interface SessionDependencies {
 export interface CreatedSession {
   id: number;
   adminId: number;
+  adminKeyId?: string;
   token: string;
   csrfToken: string;
   createdAt: number;
@@ -26,6 +27,7 @@ export interface CreatedSession {
 export interface ValidatedSession {
   id: number;
   adminId: number;
+  adminKeyId?: string;
   csrfTokenHash: string;
   createdAt: number;
   lastSeenAt: number;
@@ -36,6 +38,7 @@ export interface ValidatedSession {
 interface SessionRow {
   id: number;
   admin_id: number;
+  admin_key_id: string | null;
   csrf_token_hash: string;
   created_at: number;
   last_seen_at: number;
@@ -98,6 +101,35 @@ export function createSession(
   };
 }
 
+export function createAdminKeySession(
+  database: DatabaseSync,
+  adminKeyId: string,
+  dependencies: SessionDependencies = {},
+): CreatedSession {
+  const now = dependencies.now?.() ?? Date.now();
+  const randomBytes = dependencies.randomBytes ?? cryptoRandomBytes;
+  const token = randomBytes(32).toString('base64url');
+  const csrfToken = deriveSessionCsrfToken(token);
+  const idleExpiresAt = now + IDLE_SESSION_TTL_MS;
+  const absoluteExpiresAt = now + ABSOLUTE_SESSION_TTL_MS;
+  database.prepare("INSERT OR IGNORE INTO admins (id, username, password_hash, totp_secret_encrypted, created_at, updated_at) VALUES (1, 'legacy-admin', 'disabled', 'disabled', 0, 0)").run();
+  const result = database.prepare(`
+    INSERT INTO sessions (
+      admin_id, admin_key_id, token_hash, csrf_token_hash, created_at,
+      last_seen_at, idle_expires_at, absolute_expires_at
+    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+  `).run(adminKeyId, hashOpaqueToken(token), hashOpaqueToken(csrfToken), now, now, idleExpiresAt, absoluteExpiresAt);
+  return {
+    id: Number(result.lastInsertRowid),
+    adminId: 1,
+    adminKeyId,
+    token,
+    csrfToken,
+    createdAt: now,
+    idleExpiresAt,
+    absoluteExpiresAt,
+  };
+}
 export function validateSession(
   database: DatabaseSync,
   token: string,
@@ -109,6 +141,7 @@ export function validateSession(
       SELECT
         id,
         admin_id,
+        admin_key_id,
         csrf_token_hash,
         created_at,
         last_seen_at,
@@ -146,6 +179,7 @@ export function validateSession(
   return {
     id: row.id,
     adminId: row.admin_id,
+    adminKeyId: row.admin_key_id ?? undefined,
     csrfTokenHash: row.csrf_token_hash,
     createdAt: row.created_at,
     lastSeenAt: now,

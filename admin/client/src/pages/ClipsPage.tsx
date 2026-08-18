@@ -164,20 +164,28 @@ export function ClipsPage() {
       {loading ? <LoadingBlock /> : error ? <ErrorBlock message={error} onRetry={reload} /> : !data?.items.length ? (
         <EmptyBlock title="剪切板还是空的" detail="把经常复用的实现整理为独立剪切内容。" action={<Link className="primary-button" to="/clips/new">新建剪切内容</Link>} />
       ) : (
-        <section className="data-table-wrap">
-          <table className="data-table clip-table" aria-label="剪切板列表">
-            <thead><tr><th>剪切内容</th><th>语言</th><th>最近修改</th><th><span className="sr-only">操作</span></th></tr></thead>
-            <tbody>{data.items.map((clip) => (
-              <tr key={clip.slug}>
-                <td><Link className="table-title row-stretched-link" to={`/clips/${encodeURIComponent(clip.slug)}`} aria-label={`打开剪切内容 ${clip.title}`}><strong>{clip.title}</strong><span>{clip.file}</span></Link></td>
-                <td><span className="language-label">{clipLanguageLabel(clip.language)}</span></td>
-                <td>{formatDate(clip.updatedAt)}</td>
-                <td className="row-action-cell"><button className="danger-text clip-row-delete" type="button" aria-label={`删除 ${clip.title}`} disabled={deletingSlug === clip.slug} onClick={() => void deleteClip(clip.slug, clip.title)}>{deletingSlug === clip.slug ? '删除中…' : '删除'}</button></td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </section>
-      )}
+        <section className="editorial-resource-list clip-resource-list" aria-label="剪切板列表">
+          {data.items.map((clip) => (
+            <article className="editorial-resource-row clip-resource-row" key={clip.slug}>
+              <Link className="editorial-resource-link" to={`/clips/${encodeURIComponent(clip.slug)}`} aria-label={`打开剪切内容 ${clip.title}`}>
+                <span className="editorial-resource-meta">
+                  <span>{formatDate(clip.updatedAt)}</span>
+                  <small>最近修改</small>
+                </span>
+                <span className="editorial-resource-main">
+                  <strong className="editorial-resource-title">{clip.title}</strong>
+                  <small className="editorial-resource-detail">{clip.file}</small>
+                </span>
+                <span className="editorial-resource-aside">
+                  <span className="language-label">{clipLanguageLabel(clip.language)}</span>
+                </span>
+              </Link>
+              <div className="editorial-resource-actions">
+                <button className="danger-text clip-row-delete" type="button" aria-label={`删除 ${clip.title}`} disabled={deletingSlug === clip.slug} onClick={() => void deleteClip(clip.slug, clip.title)}>{deletingSlug === clip.slug ? '删除中…' : '删除'}</button>
+              </div>
+            </article>
+          ))}
+        </section>      )}
       {importFile && (
         <ClipImportDialog
           file={importFile}

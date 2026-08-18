@@ -15,7 +15,7 @@ describe('admin app shell behavior', () => {
     expect(shell).toContain('setMenuOpen(false);');
     expect(shell).not.toContain('menu-scrim');
     expect(shell).not.toContain("{ to: '/backups', label: '备份' }");
-    expect(shell).not.toContain("{ to: '/security', label: 'API 与安全'");
+    expect(shell).not.toContain("{ to: '/security', label: '密钥与安全'");
     expect(shell).not.toContain('责任编辑');
     expect(shell).not.toContain('className="avatar"');
     expect(shell).toContain('aria-label="设置"');
@@ -38,7 +38,7 @@ describe('admin navigation copy', () => {
   it('labels the clip destination as 剪切板', async () => {
     const shell = await read('src/components/AppShell.tsx');
 
-    expect(shell).toContain("{ to: '/clips', label: '剪切板' }");
+    expect(shell).toContain("{ to: '/clips', label: '剪切板', permission: 'clips:read' }");
     expect(shell).not.toContain("label: 'Clips'");
   });
 });

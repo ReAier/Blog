@@ -1,0 +1,13 @@
+:root {
+  --article-glass-surface: rgba(255, 254, 250, .46);
+  --article-glass-surface-fallback: rgba(255, 254, 250, .9);
+  --article-glass-shadow: 0 22px 64px rgba(38, 35, 29, .1);
+  --article-glass-blur: 16px;
+  --article-glass-saturation: 125%;
+}
+
+:root[data-theme='dark'] {
+  --article-glass-surface: rgba(16, 18, 20, .48);
+  --article-glass-surface-fallback: rgba(16, 18, 20, .92);
+  --article-glass-shadow: 0 24px 68px rgba(0, 0, 0, .3);
+}

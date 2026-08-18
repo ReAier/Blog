@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ConfirmDialogProvider } from '../admin/client/src/context/ConfirmDialogContext';
@@ -75,6 +75,21 @@ describe('article list', () => {
     await waitFor(() => expect(apiMocks.listPosts).not.toHaveBeenCalledWith({ includeDeleted: true }));
   });
 
+  it('closes the tag filter when the user clicks elsewhere', async () => {
+    const taggedPost = { ...post('tagged-post'), tags: ['Markdown'] };
+    apiMocks.listPosts.mockResolvedValue(page([taggedPost]));
+
+    renderPage();
+
+    const trigger = await screen.findByRole('button', { name: '筛选标签' });
+    fireEvent.click(trigger);
+    expect(screen.getByRole('searchbox', { name: '搜索标签' })).toBeInTheDocument();
+
+    fireEvent.pointerDown(document.body);
+    await waitFor(() => expect(screen.queryByRole('searchbox', { name: '搜索标签' })).not.toBeInTheDocument());
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('uses a row-wide article link without visible edit copy', async () => {
     apiMocks.listPosts.mockResolvedValue(page([post('published-one')]));
 
@@ -82,7 +97,7 @@ describe('article list', () => {
 
     const link = await screen.findByRole('link', { name: '打开文章 published-one' });
     expect(link).toHaveAttribute('href', '/posts/published-one');
-    expect(link).toHaveClass('row-stretched-link');
+    expect(link).toHaveClass('editorial-resource-link');
     expect(screen.queryByText('编辑 →')).not.toBeInTheDocument();
   });
 });

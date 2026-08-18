@@ -183,9 +183,9 @@ clip 不是独立内容集合。构建时，`src/lib/clips.ts` 会：
 
 ## 管理后台与机器 API 边界
 
-公开博客仍是纯静态产物。Fastify、SQLite 和 React 只服务于独立管理域名，不进入公开站点运行时。浏览器后台使用同源 Cookie、稳定 CSRF Token 和单管理员会话；`/api/v1` 机器接口使用只保存哈希的 Bearer Token、细粒度 Scope、每资源 revision、审计日志和独立限流。
+公开博客仍是纯静态产物。Fastify、SQLite 和 React 只服务于独立管理域名，不进入公开站点运行时。浏览器后台只接受 `er-` 后台 Key，并把它兑换为同源 HttpOnly Cookie 会话；会话继续使用稳定 CSRF Token，并在每次请求时重新读取关联 Key 的有效期、吊销状态和逐操作权限。`/api/v1` 机器接口只接受 `ai-` Bearer Key，使用只保存哈希的凭据、细粒度 Scope、每资源 revision、审计日志和独立限流。两种 Key 的存储表、管理接口和认证边界完全分离。
 
-机器 API 只能读写文章、独立代码片段和图片。新建文章强制保持草稿，更新不能修改 slug、草稿状态或精选状态；发布、删除、恢复、备份和认证管理没有机器接口。OpenAPI 3.1 文档和 Fastify 路由请求 Schema 复用同一组定义。
+机器 API 只能读写文章、独立代码片段和图片，不能使用 `er-` Key；后台登录也不能使用 `ai-` Key。新建文章强制保持草稿，更新不能修改 slug、草稿状态或精选状态；发布、删除、恢复、备份和认证管理没有机器接口。OpenAPI 3.1 文档和 Fastify 路由请求 Schema 复用同一组定义。
 
 ## 相关文档
 

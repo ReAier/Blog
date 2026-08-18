@@ -317,7 +317,7 @@ export const apiTokenCreateBodySchema = {
         ],
       },
     },
-    expiresInDays: { type: 'integer', minimum: 1, maximum: 365, default: 30 },
+    expiresInDays: { anyOf: [{ type: 'integer', enum: [7, 30, 365] }, { type: 'null' }], default: 30 },
   },
 } as const;
 

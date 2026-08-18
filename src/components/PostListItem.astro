@@ -1,0 +1,39 @@
+---
+import { resolveCoverUrl } from '../lib/image-paths';
+
+interface Props {
+  post: {
+    id: string;
+    data: {
+      title: string;
+      description: string;
+      publishedAt: Date;
+      updatedAt?: Date;
+      tags: string[];
+      cover?: string;
+    };
+  };
+}
+
+const { post } = Astro.props;
+const cover = resolveCoverUrl(post.data.cover);
+const formatDate = (date: Date) => new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(date);
+---
+<li class="post-list-item">
+  <a class="post-list-item__link" data-has-cover={cover ? 'true' : undefined} href={`/posts/${post.id}/`}>
+    {cover && <img class="post-list-item__cover" src={cover} alt="" loading="lazy" decoding="async" onerror="this.closest('[data-has-cover]')?.removeAttribute('data-has-cover'); this.setAttribute('hidden', '')" />}
+    <span class="post-list-item__dates">
+      <time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time>
+      {post.data.updatedAt && <span>更新于 {formatDate(post.data.updatedAt)}</span>}
+    </span>
+    <span class="post-list-item__content">
+      <h2>{post.data.title}</h2>
+      <span class="post-list-item__description">{post.data.description}</span>
+    </span>
+    {post.data.tags.length > 0 && <span class="post-list-item__tags" aria-label="标签">{post.data.tags.join(' · ')}</span>}
+  </a>
+</li>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiConflictError } from '../api/client';
 import { useConfirmDialog } from '../context/ConfirmDialogContext';
+import { useAuth } from '../context/AuthContext';
 import { MarkdownEditor, type MarkdownEditorHandle } from '../components/MarkdownEditor';
 import { BlogDateField } from '../components/BlogDateField';
 import { Dialog } from '../components/Dialog';
@@ -55,9 +56,11 @@ function equalDraft(left: PostSaveInput, right: PostSaveInput): boolean {
 
 export function PostEditorPage() {
   const confirmAction = useConfirmDialog();
+  const { hasPermission } = useAuth();
   const { slug = 'new' } = useParams();
   const navigate = useNavigate();
   const isNew = slug === 'new';
+  const canRenderInstantPreview = hasPermission('preview:render');
   const [draft, setDraft] = useState<PostSaveInput>({
     slug: '',
     frontmatter: { ...emptyFrontmatter },
@@ -205,7 +208,10 @@ export function PostEditorPage() {
   useEffect(() => {
     let active = true;
     const timer = window.setTimeout(() => {
-      void api.previewInstant(draft.body).then((result) => {
+      const request = canRenderInstantPreview || isNew
+        ? api.previewInstant(draft.body)
+        : api.previewPost(slug);
+      void request.then((result) => {
         if (active) setPreview(result.html);
       }).catch(() => {
         if (active) setPreview('<p>即时预览生成失败，请检查 Markdown。</p>');
@@ -215,7 +221,7 @@ export function PostEditorPage() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [draft.body]);
+  }, [canRenderInstantPreview, draft.body, isNew, slug]);
 
   const updateFrontmatter = <K extends keyof PostFrontmatter>(key: K, value: PostFrontmatter[K]) => {
     setDraft((current) => ({

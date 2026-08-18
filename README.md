@@ -54,13 +54,28 @@ npm run dev
 | `npm run preview` | 本地预览 `dist/` 生产构建 |
 | `npm run admin:build` | 构建 React 管理后台 |
 | `npm run admin:server` | 启动 Fastify 管理服务 |
-| `npm run admin:init -- --username owner` | 从服务器 CLI 初始化唯一管理员 |
+| `npm run admin:key -- create --role owner --expires permanent --name "Primary owner"` | 在当前数据目录创建后台登录 Key |
+| `npm run admin:key -- list` | 列出当前数据目录中的后台 Key 元数据 |
+| `npm run admin:key -- revoke --id <key-id>` | 吊销指定后台 Key |
 | `npm run upgrade -- --dry-run` | 演练 SSH 系统升级流程，不上传或切换代码版本 |
 | `npm run upgrade` | 升级博客代码与后台系统，不切换公开静态版本 |
 
 升级命令会在交互式终端显示单行进度条，在 CI 或重定向日志中每个阶段只显示一行。各子命令的正常输出会被隐藏；如果失败，进度显示会先结束，然后在最后统一输出失败阶段、退出码、诊断日志尾部和完整日志路径。Windows、macOS 和 Linux 使用相同命令。
 
 生产输出位于 `dist/`。该目录以及 `.astro/`、`.deploy/` 都是生成内容，不应直接编辑或提交。
+
+### 后台 Key 登录
+
+管理后台不再使用用户名、密码、TOTP 或恢复码。浏览器登录仅接受 `er-...` 后台 Key，并将其兑换为 HttpOnly Cookie 会话；AI 和自动化客户端仅使用 `ai-...` Bearer Key 调用 `/api/v1/*`，两种 Key 不能混用。
+
+本地开发默认把后台状态写入 `<project>/.admin-data/state/admin.sqlite`。生产服务读取 `/var/lib/aier-blog/state/admin.sqlite`。创建、列出或吊销生产 Key 时必须明确指定同一个数据根目录：
+
+```bash
+cd /opt/aier-blog/current
+sudo -u aier-blog -- npm run admin:key -- create --data-root /var/lib/aier-blog --role owner --expires permanent --name "Primary owner"
+```
+
+CLI 会先打印 `Admin database:`。只有该路径与目标后台服务实际读取的数据库一致，生成的 Key 才能登录。PowerShell 命令请写在一行；反斜杠 `\` 不是 PowerShell 续行符。明文 Key 只显示一次，不要写入仓库、日志、文章或聊天记录。完整权限模板、有效期、SSH 恢复和排障流程见[管理后台部署](docs/admin-backend.md)。
 
 ## 内容存储策略
 
@@ -187,8 +202,8 @@ npm test -- --run
 | [架构说明](docs/architecture.md) | 理解模块边界、路由、内容生成和浏览器增强 |
 | [内容创作指南](docs/content-authoring.md) | 新建文章、维护 frontmatter、使用 Markdown 扩展 |
 | [部署与运维](docs/deployment.md) | 当前服务器发布、回滚和通用静态托管 |
-| [管理后台部署](docs/admin-backend.md) | 单用户认证、持久内容、systemd、Nginx 与发布助手 |
-| [AI REST API](docs/ai-api.md) | Token 生命周期、Scope、OpenAPI、并发更新、限流与安全边界 |
+| [管理后台部署](docs/admin-backend.md) | 分类型 Key、权限、SSH 恢复、持久内容、systemd、Nginx 与发布助手 |
+| [AI REST API](docs/ai-api.md) | AI Key 生命周期、Scope、OpenAPI、并发更新、限流与安全边界 |
 | [维护与测试指南](docs/maintenance.md) | AI 或人工修改项目、选择测试和排查故障 |
 | [云剪切板使用说明](docs/cloud-clipboard.md) | 保存和引用不适合直接放入正文的大段代码 |
 

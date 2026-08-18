@@ -1,20 +1,22 @@
-﻿# AI REST API 使用指南
+# AI REST API 使用指南
 
-Aier Blog 提供受限的 `/api/v1` 机器接口，供 AI 客户端、自动化脚本和编辑辅助工具读取或编写内容。它与浏览器管理会话完全分离，使用个人访问令牌（Personal Access Token）认证。
+Aier Blog 提供受限的 `/api/v1` 机器接口，供 AI 客户端、自动化脚本和编辑辅助工具读取或编写内容。它与浏览器管理会话完全分离，只使用 `ai-<43 位 base64url>` AI Key 认证。用于后台登录的 `er-...` Key 不能调用这些接口。
 
 该接口的设计目标是“辅助编辑，而不是自动发布”：机器客户端可以创建草稿、更新正文、管理独立代码片段和上传图片，但不能发布、删除、恢复、迁移 slug、操作备份或管理其他令牌。
 
-## 创建和撤销令牌
+## 创建和撤销 AI Key
 
-1. 登录管理后台。
+1. 使用有效的 `er-...` 后台 Key 登录管理后台。
 2. 打开 **API 与安全**。
 3. 填写令牌名称、有效期和所需权限。
-4. 创建后立即复制 `aier_pat_...` 明文令牌。
+4. 创建后立即复制 `ai-...` 明文令牌。
 5. 将令牌保存到调用方的 Secret Manager 或环境变量中。
 
-明文令牌只显示一次。数据库仅保存 SHA-256 哈希和用于识别的短前缀，无法从后台恢复原始令牌。默认有效期为 30 天，允许范围为 1–365 天。撤销或过期后会立即停止工作。
+明文令牌只显示一次。数据库仅保存 SHA-256 哈希和用于识别的短前缀，无法从后台恢复原始令牌。默认有效期为 30 天，可选择 7 天、30 天、365 天或永久。撤销或过期后会立即停止工作。
 
 不要把令牌写入 Git、Markdown 内容、浏览器前端代码、构建日志或聊天记录。
+
+后台管理接口使用 `/api/auth/ai-keys` 创建、修改和吊销 AI Key；这些接口只接受具有相应权限的后台 Cookie 会话，不接受 `ai-...` Bearer Key。后台 Key 则由独立的 `/api/auth/admin-keys` 接口管理。旧 `aier_pat_...` Key 已失效，不能继续调用 API。
 
 ## 权限矩阵
 
@@ -34,14 +36,14 @@ Aier Blog 提供受限的 `/api/v1` 机器接口，供 AI 客户端、自动化�
 所有 `/api/v1` 请求都使用 Bearer Token：
 
 ```http
-Authorization: Bearer aier_pat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Authorization: Bearer ai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 示例环境变量：
 
 ```bash
 export AIER_API_ORIGIN='https://admin.blog.reaier.top'
-export AIER_API_TOKEN='aier_pat_...'
+export AIER_API_TOKEN='ai-...'
 ```
 
 ## OpenAPI 3.1

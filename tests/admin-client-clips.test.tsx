@@ -92,10 +92,10 @@ describe('clipboard list', () => {
 
     renderPage();
 
-    expect(await screen.findByRole('table', { name: '剪切板列表' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: '剪切板列表' })).toBeInTheDocument();
     const link = screen.getByRole('link', { name: '打开剪切内容 cpp sample' });
     expect(link).toHaveAttribute('href', '/clips/cpp-sample');
-    expect(link).toHaveClass('row-stretched-link');
+    expect(link).toHaveClass('editorial-resource-link');
     expect(screen.queryByText('编辑 →')).not.toBeInTheDocument();
     expect(screen.queryByText('引用')).not.toBeInTheDocument();
   });

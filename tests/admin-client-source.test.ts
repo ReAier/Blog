@@ -26,7 +26,6 @@ describe('admin client source contract', () => {
     expect(app).toContain('createBrowserRouter');
     for (const route of [
       '/login',
-      '/setup',
       '/posts',
       '/posts/:slug',
       '/clips',
@@ -61,34 +60,24 @@ describe('admin client source contract', () => {
     expect(shell).toContain('aria-expanded');
   });
 
-  it('supports password plus TOTP or recovery-code login', async () => {
+  it('supports er-key login without browser persistence', async () => {
     const login = await source('src/pages/LoginPage.tsx');
 
-    expect(login).toContain('用户名');
-    expect(login).toContain('密码');
-    expect(login).toContain('动态验证码');
-    expect(login).toContain('恢复码');
-    expect(login).toContain('autoComplete="one-time-code"');
+    expect(login).toContain('后台 Key');
+    expect(login).toContain('placeholder="er-…"');
+    expect(login).toContain('继续写<span>。</span>');
+    expect(login).not.toContain('使用编辑部 Key');
+    expect(login).not.toContain('后台 Key 以 er- 开头');
+    expect(login).not.toContain('不会保存到浏览器存储');
+    expect(login).not.toContain('HttpOnly 安全 Cookie');
+    expect(login).not.toContain('localStorage');
   });
-  it('provides a guarded three-step first-run setup with a TOTP QR code', async () => {
-    const [app, setup, api] = await Promise.all([
-      source('src/App.tsx'),
-      source('src/pages/SetupPage.tsx'),
-      source('src/api/auth.ts'),
-    ]);
-
-    expect(app).toContain("path: '/setup'");
-    expect(setup).toContain("from 'qrcode'");
-    expect(setup).toContain('创建管理员');
-    expect(setup).toContain('扫描 TOTP 二维码');
-    expect(setup).toContain('恢复码只显示这一次');
-    expect(setup).toContain('autoComplete="one-time-code"');
-    expect(api).toContain("'/auth/setup/status'");
-    expect(api).toContain("'/auth/setup/begin'");
-    expect(api).toContain("'/auth/setup/confirm'");
-    expect(api).not.toContain("'/auth/register'");
+  it('removes browser password and TOTP setup', async () => {
+    const [app, setup, api] = await Promise.all([source('src/App.tsx'), source('src/pages/SetupPage.tsx'), source('src/api/auth.ts')]);
+    expect(app).not.toContain("path: '/setup'");
+    expect(setup).not.toContain("from 'qrcode'");
+    expect(api).not.toContain('/auth/setup/');
   });
-
   it('implements the complete content, asset, backup, publish and log workspace', async () => {
     const files = [
       'src/pages/DashboardPage.tsx',
@@ -135,6 +124,8 @@ describe('admin client source contract', () => {
     expect(postEditor).toContain('内容版本冲突');
     expect(postEditor).not.toContain('完整预览');
     expect(postEditor).toContain('sandbox=""');
+    expect(postEditor).toContain("hasPermission('preview:render')");
+    expect(postEditor).toContain('api.previewPost(slug)');
     expect(postEditor).toContain('updatedAt: todayInShanghai()');
     expect(postEditor).not.toContain('???');
     expect(actions).not.toContain('createClipFence');
@@ -247,17 +238,18 @@ describe('admin client source contract', () => {
     ]);
     expect(posts).not.toContain('includeDeleted: true');
     expect(posts).not.toContain('counts.deleted');
-    expect(posts).toContain('row-stretched-link');
+    expect(posts).toContain('className="editorial-resource-link"');
+    expect(posts).not.toContain('className="data-table post-table"');
     expect(posts).not.toContain('编辑 →');
     expect(clips).toContain('className="search-field post-title-search"');
-    expect(clips).toContain('className="data-table clip-table"');
-    expect(clips).toContain('row-stretched-link');
+    expect(clips).toContain('className="editorial-resource-link"');
+    expect(clips).not.toContain('className="data-table clip-table"');
     expect(clips).not.toContain('className="clip-grid"');
     expect(clips).not.toContain('clip.references');
     expect(styles).toMatch(/\.toolbar\.paper-strip\s*\{[^}]*position:\s*relative[^}]*z-index:\s*20[^}]*overflow:\s*visible/s);
     expect(styles).toMatch(/\.tag-filter-control\s*>\s*\.secondary-button\s*\{[^}]*border-radius:\s*11px/);
-    expect(styles).toMatch(/\.data-table tbody tr\s*\{[^}]*position:\s*relative/);
-    expect(styles).toMatch(/\.row-stretched-link::after\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0/);
+    expect(styles).toMatch(/\.editorial-resource-link\s*\{[^}]*display:\s*grid[^}]*text-decoration:\s*none/s);
+    expect(styles).toMatch(/\.editorial-resource-link:focus-visible\s*\{[^}]*outline:\s*2px solid/);
     expect(styles).toMatch(/main\.content-canvas:focus(?:-visible)?\s*\{[^}]*outline:\s*none/);
   });
   it('uses the site confirmation provider instead of native browser dialogs', async () => {
@@ -285,7 +277,7 @@ describe('admin client source contract', () => {
     ]);
     const css = `${entryCss}\n${themeCss}`;
 
-    expect(entryCss.trimStart().startsWith("@import './styles/theme.css';")).toBe(true);
+    expect(entryCss.trimStart()).toMatch(/^@import '\.\.\/\.\.\/\.\.\/src\/styles\/glass-material\.css';\r?\n@import '\.\/styles\/theme\.css';/);
     expect(css).toContain('--paper:');
     expect(css).toContain('--accent: #c74776');
     expect(css).toContain("--page-background: url('/site-background.webp')");
@@ -313,9 +305,18 @@ describe('admin client source contract', () => {
     expect(shell).toContain('to="/security"');
     expect(page).toContain('createApiToken');
     expect(page).toContain('revokeApiToken');
-    expect(page).toContain('明文令牌只显示这一次');
+    expect(page).toContain('明文只显示一次');
+    expect(page).toContain('后台密钥');
+    expect(page).toContain('自动化密钥');
+    expect(page).toContain('只读者');
+    expect(page).toContain('权限设置');
+    expect(page).toContain('<details');
+    expect(page).not.toContain('Access control');
+    expect(page).not.toContain("viewer: 'Viewer'");
+    expect(page).not.toContain('window.prompt');
+    expect(shell).toContain('密钥与安全');
     expect(page).toContain('posts:write');
-    expect(authApi).toContain("'/auth/tokens'");
+    expect(authApi).toContain("'/auth/ai-keys'");
   });
 
   it('contains syntactically valid TypeScript and TSX sources', async () => {
@@ -336,7 +337,6 @@ describe('admin client source contract', () => {
       'src/lib/editor-actions.ts',
       'src/lib/preview.ts',
       'src/pages/LoginPage.tsx',
-      'src/pages/SetupPage.tsx',
       'src/components/AppearanceControls.tsx',
       'src/lib/preferences.ts',
       'src/pages/DashboardPage.tsx',

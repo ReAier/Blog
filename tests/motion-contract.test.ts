@@ -146,7 +146,8 @@ describe('page-specific motion coverage', () => {
     const css = await read('src/styles/global.css');
 
     expect(card).toContain('data-motion-card');
-    expect(home).toContain('data-motion-card');
+    expect(home).toContain("import PostCard from '../components/PostCard.astro'");
+    expect(home).toContain('<PostCard post={post}');
     for (const token of [
       "matchMedia('(hover: none)')",
       "querySelectorAll<HTMLElement>('[data-motion-card]')",

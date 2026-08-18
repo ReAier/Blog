@@ -35,7 +35,7 @@ async function fixture() {
     repository: createContentRepository({ root: contentRoot }),
     authOverride: async () => ({ adminId: 1, username: 'owner', csrfToken: 'csrf' }),
   });
-  return { app, database };
+  return { app, database, contentRoot };
 }
 
 const writeHeaders = {
@@ -521,6 +521,22 @@ describe('admin API client contract', () => {
       finishedAt: expect.any(String),
       log: ['Publish interrupted because the admin service restarted.'],
     });
+    await app.close();
+    database.close();
+  });
+  it('reports clipboard and image storage independently on the dashboard', async () => {
+    const { app, database, contentRoot } = await fixture();
+    await writeFile(join(contentRoot, 'clips', 'size-probe.txt'), '12345');
+    await writeFile(join(contentRoot, 'images', 'size-probe.webp'), '1234567');
+
+    const dashboard = await app.inject({ method: 'GET', url: '/api/dashboard' });
+
+    expect(dashboard.statusCode, dashboard.body).toBe(200);
+    expect(dashboard.json()).toMatchObject({
+      clipStorageBytes: 5,
+      imageStorageBytes: 7,
+    });
+    expect(dashboard.json().storageBytes).toBeGreaterThan(12);
     await app.close();
     database.close();
   });

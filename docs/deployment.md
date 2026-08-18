@@ -99,6 +99,17 @@ readlink -f /var/www/aier-blog/current
 
 代码升级失败时，`deployment/install-code.sh` 恢复原 `/opt/aier-blog/current`；如果已执行内容迁移，也会恢复迁移前备份。
 
+### 后台认证迁移与恢复
+
+部署分类型 Key 认证的版本会立即清除旧 `aier_pat_...` Token、旧浏览器会话，并停用密码、TOTP 和恢复码登录。升级完成后必须通过 SSH 在生产数据库中创建新的永久 Owner Key：
+
+```bash
+cd /opt/aier-blog/current
+sudo -u aier-blog -- npm run admin:key -- create --data-root /var/lib/aier-blog --role owner --expires permanent --name "Primary owner"
+```
+
+命令必须输出 `Admin database: /var/lib/aier-blog/state/admin.sqlite`。如果输出的是项目目录下的 `.admin-data/state/admin.sqlite`，说明 Key 创建在开发数据库中，无法登录生产后台。明文 Key 只显示一次，应立即保存到安全的凭据管理器；若所有后台 Key 丢失，只能再次通过该 SSH 流程恢复。
+
 ### 后台公开发布流程
 
 管理员在后台发布台启动任务后，服务会创建位于 `/var/lib/aier-blog/jobs` 的隔离快照，依次运行内容校验、`npm run check` 和生产构建。代码单元测试只在 SSH 系统升级前运行，因为后台持久内容不是仓库测试夹具，不应决定代码测试是否通过。快照会创建独立、可写的 `node_modules` 目录：普通依赖文件优先使用硬链接复用，目录本身不再指向代码版本中的只读 `node_modules`，跨文件系统时则回退为复制。Astro 内容缓存写入快照自己的 `.astro`，Vite 依赖缓存写入 `.astro/vite`。这样既不会修改代码版本中的依赖目录，也避免同一模块同时出现 release 路径和 workspace 路径。

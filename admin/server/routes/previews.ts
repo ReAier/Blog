@@ -11,6 +11,7 @@ import { remarkClipCards } from '../../../src/lib/remark-clip-card';
 import { remarkProblemCards } from '../../../src/lib/remark-problem-card';
 import { remarkReferenceCards } from '../../../src/lib/remark-reference-card';
 import type { AdminConfig } from '../config';
+import type { ContentRepository } from '../content/repository';
 import { jsonSchema } from '../schemas';
 
 interface PreviewMarkdownNode {
@@ -61,6 +62,7 @@ async function sendPreviewAsset(reply: FastifyReply, path: string): Promise<unkn
 export async function registerPreviewRoutes(
   app: FastifyInstance,
   config: AdminConfig,
+  repository: ContentRepository,
 ): Promise<void> {
   const [siteCss, rawKatexCss] = await Promise.all([
     readFile(resolve(config.projectRoot, 'src/styles/global.css'), 'utf8'),
@@ -94,6 +96,19 @@ export async function registerPreviewRoutes(
     rehypePlugins: [rehypeKatex],
   });
 
+  const render = async (markdown: string) => {
+    const result = await processor.render(markdown);
+    return {
+      html: buildInstantPreviewDocument(result.code, siteCss, katexCss),
+      generatedAt: new Date().toISOString(),
+    };
+  };
+
+  app.get('/api/posts/:slug/preview', async (request) => {
+    const post = await repository.readPost((request.params as { slug: string }).slug);
+    return render(post.body);
+  });
+
   app.post('/api/previews/instant', {
     schema: jsonSchema({
       body: {
@@ -107,10 +122,6 @@ export async function registerPreviewRoutes(
     }),
   }, async (request) => {
     const body = request.body as { markdown?: string; body?: string };
-    const result = await processor.render(body.markdown ?? body.body ?? '');
-    return {
-      html: buildInstantPreviewDocument(result.code, siteCss, katexCss),
-      generatedAt: new Date().toISOString(),
-    };
+    return render(body.markdown ?? body.body ?? '');
   });
 }

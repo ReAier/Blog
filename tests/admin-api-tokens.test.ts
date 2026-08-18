@@ -30,7 +30,7 @@ describe('API tokens', () => {
       expiresInDays: 30,
     }, Date.UTC(2026, 7, 15));
 
-    expect(created.token).toMatch(/^aier_pat_[A-Za-z0-9_-]{43}$/);
+    expect(created.token).toMatch(/^ai-[A-Za-z0-9_-]{43}$/);
     expect(created.record).toMatchObject({
       name: 'Claude draft writer',
       scopes: ['posts:read', 'posts:write'],
@@ -48,7 +48,7 @@ describe('API tokens', () => {
     const created = createApiToken(database, {
       name: 'Writer',
       scopes: ['posts:read', 'posts:write'],
-      expiresInDays: 1,
+      expiresInDays: 7,
     }, now);
 
     expect(authenticateApiToken(database, created.token, 'posts:write', now + 1_000)).toMatchObject({
@@ -64,9 +64,9 @@ describe('API tokens', () => {
     const expiring = createApiToken(database, {
       name: 'Short lived',
       scopes: ['images:read'],
-      expiresInDays: 1,
+      expiresInDays: 7,
     }, now);
-    expect(authenticateApiToken(database, expiring.token, 'images:read', now + 86_400_000)).toBeNull();
+    expect(authenticateApiToken(database, expiring.token, 'images:read', now + 7 * 86_400_000)).toBeNull();
   });
 
   it('rejects unknown scopes and expiry outside one to 365 days', () => {
@@ -79,7 +79,7 @@ describe('API tokens', () => {
     expect(() => createApiToken(database, {
       name: 'Invalid',
       scopes: ['posts:read'],
-      expiresInDays: 366,
+      expiresInDays: 366 as unknown as 365,
     })).toThrow(/365/);
   });
 });

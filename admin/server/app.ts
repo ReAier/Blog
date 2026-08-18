@@ -6,16 +6,11 @@ import helmet from '@fastify/helmet';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { DatabaseSync } from 'node:sqlite';
-import { resetAdminCredentials } from '../cli/admin-credentials';
-import { authenticateAdmin } from './auth/login';
 import { verifyCsrfRequest } from './auth/csrf';
+import { resolveAdminKey } from './auth/admin-keys';
+import { requiredAdminPermission } from './auth/permissions';
 import {
-  AdminSetupError,
-  beginAdminSetup,
-  confirmAdminSetup,
-  getAdminSetupStatus,
-} from './auth/setup';
-import {
+  createAdminKeySession,
   hashOpaqueToken,
   synchronizeSessionCsrfToken,
   validateSession,
@@ -29,6 +24,7 @@ import { migrateAdminDatabase } from './db/migrations';
 import { HistoryService } from './history/service';
 import { adminAuth, type Authenticated } from './http';
 import { BuildGate } from './publish/runner';
+import { registerAdminKeyRoutes } from './routes/admin-keys';
 import { registerApiTokenRoutes } from './routes/api-tokens';
 import { registerApiV1Routes } from './routes/api-v1';
 import { registerBackupRoutes } from './routes/backups';
@@ -41,10 +37,6 @@ import { registerTrashRoutes } from './routes/trash';
 import { cleanupExpiredImageTrash } from './trash/cleanup';
 import {
   jsonSchema,
-  loginBodySchema,
-  rotateSecurityBodySchema,
-  setupBeginBodySchema,
-  setupConfirmBodySchema,
 } from './schemas';
 
 const productionSessionCookie = '__Host-aier_admin';
@@ -53,9 +45,6 @@ const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
 const publicApiRoutes = new Set([
   '/api/health',
   '/api/auth/login',
-  '/api/auth/setup/status',
-  '/api/auth/setup/begin',
-  '/api/auth/setup/confirm',
 ]);
 
 export interface BuildServerOptions {
@@ -137,6 +126,7 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
     maxVersions: 100,
   });
   const buildGate = new BuildGate();
+  const failedKeyLogins = new Map<string, { count: number; resetAt: number }>();
   const app = Fastify({
     logger: process.env.NODE_ENV === 'test' ? false : true,
     trustProxy: true,
@@ -174,12 +164,18 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
     if (!token) return null;
     const session = validateSession(database, token);
     if (!session) return null;
-    const administrator = database.prepare('SELECT username FROM admins WHERE id = ?')
-      .get(session.adminId) as { username: string } | undefined;
-    if (!administrator) return null;
+    if (!session.adminKeyId) return null;
+    const key = database.prepare('SELECT id, name, role, permissions_json, expires_at, revoked_at FROM admin_keys WHERE id = ?').get(session.adminKeyId) as {
+      id: string; name: string; role: Authenticated['role']; permissions_json: string;
+      expires_at: number | null; revoked_at: number | null;
+    } | undefined;
+    if (!key || key.revoked_at !== null || (key.expires_at !== null && key.expires_at <= Date.now())) return null;
     return {
       adminId: session.adminId,
-      username: administrator.username,
+      username: key.name,
+      keyId: key.id,
+      role: key.role,
+      permissions: JSON.parse(key.permissions_json),
       csrfTokenHash: session.csrfTokenHash,
       sessionId: session.id,
     };
@@ -201,6 +197,13 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
       });
     }
     (request as FastifyRequest & { adminAuth: Authenticated }).adminAuth = auth;
+    const requiredPermission = requiredAdminPermission(request.method, routeUrl);
+    if (requiredPermission && auth.permissions && !auth.permissions.includes(requiredPermission)) {
+      return reply.code(403).send({
+        code: 'PERMISSION_DENIED',
+        message: `The ${requiredPermission} permission is required.`,
+      });
+    }
     if (!safeMethods.has(request.method) && !verifyCsrfRequest({
       method: request.method,
       origin: request.headers.origin,
@@ -250,21 +253,6 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
         message: 'The uploaded file exceeds the configured size limit.',
       });
     }
-    if (error instanceof AdminSetupError) {
-      const status = error.code === 'SETUP_ALREADY_COMPLETED'
-        ? 409
-        : error.code === 'INVALID_SETUP_TOKEN'
-          || error.code === 'INVALID_SETUP_CHALLENGE'
-          || error.code === 'INVALID_TOTP'
-          ? 401
-          : error.code === 'SETUP_CHALLENGE_EXPIRED'
-            ? 410
-            : 400;
-      return reply.code(status).send({
-        code: error.code,
-        message: error.message,
-      });
-    }
     if (error instanceof ContentConflictError) {
       return reply.code(409).send({
         code: 'REVISION_CONFLICT',
@@ -302,132 +290,35 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
 
   app.get('/api/health', { schema: jsonSchema() }, async () => ({ ok: true }));
 
-  app.get('/api/auth/setup/status', { schema: jsonSchema() }, async () => getAdminSetupStatus(database));
-
-  app.post('/api/auth/setup/begin', {
-    schema: jsonSchema({ body: setupBeginBodySchema }),
-  }, async (request, reply) => {
-    if (request.headers.origin !== config.publicOrigin) {
-      return reply.code(403).send({
-        code: 'SETUP_ORIGIN_REJECTED',
-        message: 'The setup request origin is invalid.',
+  app.post('/api/auth/login', { schema: jsonSchema() }, async (request, reply) => {
+    const keyText = (request.body as { key?: string })?.key?.trim();
+    const limiterKey = `${requestIp(request)}:${keyText?.slice(0, 11) ?? 'missing'}`;
+    const now = Date.now();
+    const attempt = failedKeyLogins.get(limiterKey);
+    if (attempt && attempt.resetAt > now && attempt.count >= 5) {
+      reply.header('retry-after', Math.ceil((attempt.resetAt - now) / 1000));
+      return reply.code(429).send({ code: 'LOGIN_RATE_LIMITED', message: 'The administrator key is invalid, expired or revoked.' });
+    }
+    const key = keyText ? resolveAdminKey(database, keyText, now) : null;
+    if (!key) {
+      const active = attempt && attempt.resetAt > now ? attempt : { count: 0, resetAt: now + 15 * 60_000 };
+      failedKeyLogins.set(limiterKey, { ...active, count: active.count + 1 });
+      return reply.code(401).send({
+        code: 'INVALID_ADMIN_KEY',
+        message: 'The administrator key is invalid, expired or revoked.',
       });
     }
-    if (!config.masterKey || config.masterKey.byteLength !== 32) {
-      return reply.code(503).send({
-        code: 'AUTH_NOT_CONFIGURED',
-        message: 'ADMIN_MASTER_KEY is not configured.',
-      });
-    }
-    const body = request.body as {
-      token?: string;
-      username?: string;
-      password?: string;
-    };
-    if (!body.token || !body.username || !body.password) {
-      return reply.code(400).send({
-        code: 'INVALID_SETUP_REQUEST',
-        message: 'Setup token, username and password are required.',
-      });
-    }
-    return beginAdminSetup(database, {
-      token: body.token,
-      username: body.username,
-      password: body.password,
-    }, { encryptionKey: config.masterKey });
-  });
-
-  app.post('/api/auth/setup/confirm', {
-    schema: jsonSchema({ body: setupConfirmBodySchema }),
-  }, async (request, reply) => {
-    if (request.headers.origin !== config.publicOrigin) {
-      return reply.code(403).send({
-        code: 'SETUP_ORIGIN_REJECTED',
-        message: 'The setup request origin is invalid.',
-      });
-    }
-    if (!config.masterKey || config.masterKey.byteLength !== 32) {
-      return reply.code(503).send({
-        code: 'AUTH_NOT_CONFIGURED',
-        message: 'ADMIN_MASTER_KEY is not configured.',
-      });
-    }
-    const body = request.body as { challenge?: string; totpCode?: string };
-    if (!body.challenge || !body.totpCode) {
-      return reply.code(400).send({
-        code: 'INVALID_SETUP_CONFIRMATION',
-        message: 'Setup challenge and authenticator code are required.',
-      });
-    }
-    const result = confirmAdminSetup(database, {
-      challenge: body.challenge,
-      totpCode: body.totpCode,
-    }, { encryptionKey: config.masterKey });
-    reply.setCookie(
-      sessionCookieName(config),
-      result.session.token,
-      sessionCookieOptions(config),
-    );
-    return reply.code(201).send({
-      username: result.username,
-      csrfToken: result.session.csrfToken,
-      recoveryCodes: result.recoveryCodes,
-      idleExpiresAt: result.session.idleExpiresAt,
-      absoluteExpiresAt: result.session.absoluteExpiresAt,
-    });
-  });
-  app.post('/api/auth/login', { schema: jsonSchema({ body: loginBodySchema }) }, async (request, reply) => {
-    if (!config.masterKey || config.masterKey.byteLength !== 32) {
-      return reply.code(503).send({
-        code: 'AUTH_NOT_CONFIGURED',
-        message: 'ADMIN_MASTER_KEY is not configured.',
-      });
-    }
-    const body = request.body as {
-      username?: string;
-      password?: string;
-      totp?: string;
-      recoveryCode?: string;
-      secondFactor?: { type?: 'totp' | 'recovery-code'; code?: string };
-    };
-    const secondFactor = body.secondFactor?.type && body.secondFactor.code
-      ? { type: body.secondFactor.type, code: body.secondFactor.code }
-      : body.totp
-        ? { type: 'totp' as const, code: body.totp }
-        : body.recoveryCode
-          ? { type: 'recovery-code' as const, code: body.recoveryCode }
-          : undefined;
-    if (!body.username || !body.password || !secondFactor) {
-      return reply.code(400).send({
-        code: 'INVALID_LOGIN_REQUEST',
-        message: 'Username, password and a second factor are required.',
-      });
-    }
-    const result = await authenticateAdmin(database, {
-      username: body.username,
-      password: body.password,
-      secondFactor,
-      remoteAddress: requestIp(request),
-    }, { encryptionKey: config.masterKey });
-    if (!result.ok) {
-      if (result.reason === 'locked') {
-        reply.header('retry-after', Math.ceil(result.retryAfterMs / 1000));
-      }
-      return reply.code(result.reason === 'locked' ? 429 : 401).send({
-        ...result,
-        message: 'Invalid credentials or second factor.',
-      });
-    }
-    reply.setCookie(
-      sessionCookieName(config),
-      result.session.token,
-      sessionCookieOptions(config),
-    );
+    failedKeyLogins.delete(limiterKey);
+    const session = createAdminKeySession(database, key.id);
+    reply.setCookie(sessionCookieName(config), session.token, sessionCookieOptions(config));
     return {
-      username: body.username,
-      csrfToken: result.session.csrfToken,
-      idleExpiresAt: result.session.idleExpiresAt,
-      absoluteExpiresAt: result.session.absoluteExpiresAt,
+      id: key.id,
+      username: key.name,
+      role: key.role,
+      permissions: key.permissions,
+      csrfToken: session.csrfToken,
+      idleExpiresAt: session.idleExpiresAt,
+      absoluteExpiresAt: session.absoluteExpiresAt,
     };
   });
 
@@ -437,68 +328,29 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
     const csrfToken = sessionToken && auth.sessionId
       ? synchronizeSessionCsrfToken(database, auth.sessionId, sessionToken)
       : auth.csrfToken;
-    return { username: auth.username, csrfToken };
+    return {
+      id: auth.keyId,
+      username: auth.username,
+      role: auth.role,
+      permissions: auth.permissions ?? [],
+      csrfToken,
+    };
   });
 
   app.post('/api/auth/logout', { schema: jsonSchema() }, async (request, reply) => {
     const auth = adminAuth(request);
-    if (auth.sessionId) {
-      database.prepare('UPDATE sessions SET revoked_at = ? WHERE id = ?')
-        .run(Date.now(), auth.sessionId);
-    }
+    if (auth.sessionId) database.prepare('UPDATE sessions SET revoked_at = ? WHERE id = ?').run(Date.now(), auth.sessionId);
     reply.clearCookie(sessionCookieName(config), sessionCookieOptions(config));
     return { ok: true };
   });
-
-  app.post('/api/auth/security/rotate', {
-    schema: jsonSchema({ body: rotateSecurityBodySchema }),
-  }, async (request, reply) => {
-    if (!config.masterKey || config.masterKey.byteLength !== 32) {
-      return reply.code(503).send({ code: 'AUTH_NOT_CONFIGURED' });
-    }
-    const auth = adminAuth(request);
-    const body = request.body as {
-      currentPassword?: string;
-      newPassword?: string;
-      username?: string;
-      totp?: string;
-      recoveryCode?: string;
-    };
-    const secondFactor = body.totp
-      ? { type: 'totp' as const, code: body.totp }
-      : body.recoveryCode
-        ? { type: 'recovery-code' as const, code: body.recoveryCode }
-        : undefined;
-    if (!body.currentPassword || !body.newPassword || !secondFactor) {
-      return reply.code(400).send({ code: 'INVALID_ROTATION_REQUEST' });
-    }
-    const verified = await authenticateAdmin(database, {
-      username: auth.username,
-      password: body.currentPassword,
-      secondFactor,
-      remoteAddress: requestIp(request),
-    }, { encryptionKey: config.masterKey });
-    if (!verified.ok) return reply.code(401).send({ code: 'REAUTHENTICATION_FAILED' });
-    const material = await resetAdminCredentials(database, {
-      username: body.username,
-      password: body.newPassword,
-    }, { encryptionKey: config.masterKey });
-    reply.clearCookie(sessionCookieName(config), sessionCookieOptions(config));
-    return {
-      username: material.username,
-      totpSecret: material.totpSecret,
-      otpauthUri: `otpauth://totp/${encodeURIComponent(`Aier Blog:${material.username}`)}?secret=${material.totpSecret}&issuer=${encodeURIComponent('Aier Blog')}`,
-      recoveryCodes: material.recoveryCodes,
-    };
-  });
-
+  await registerAdminKeyRoutes(app, database);
   await registerApiTokenRoutes(app, database);
   await registerApiV1Routes(app, { config, database, repository });
   await registerPostRoutes(app, { config, database, repository, history });
   await registerClipRoutes(app, { config, repository, history });
   await registerImageRoutes(app, { config, repository });
   await registerTrashRoutes(app, { config, repository });
-  await registerPreviewRoutes(app, config);
+  await registerPreviewRoutes(app, config, repository);
   await registerBackupRoutes(app, config);
   const publishRoutes = await registerPublishRoutes(app, { config, database, buildGate });
 
@@ -539,6 +391,8 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
         log: latest.log.split('\n').filter(Boolean),
       } : undefined,
       storageBytes: await directoryBytes(config.contentRoot),
+      clipStorageBytes: await directoryBytes(resolve(config.contentRoot, 'clips')),
+      imageStorageBytes: await directoryBytes(resolve(config.contentRoot, 'images')),
     };
   });
 

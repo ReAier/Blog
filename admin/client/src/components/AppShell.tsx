@@ -4,11 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { AppearanceControls } from './AppearanceControls';
 
 const navigation = [
-  { to: '/', label: '工作台', shortLabel: '首页', end: true },
-  { to: '/posts', label: '文章' },
-  { to: '/clips', label: '剪切板' },
-  { to: '/images', label: '图片库' },
-  { to: '/publish', label: '发布与日志', shortLabel: '发布' },
+  { to: '/', label: '工作台', shortLabel: '首页', end: true, permission: 'dashboard:read' },
+  { to: '/posts', label: '文章', permission: 'posts:read' },
+  { to: '/clips', label: '剪切板', permission: 'clips:read' },
+  { to: '/images', label: '图片库', permission: 'images:read' },
+  { to: '/publish', label: '发布与日志', shortLabel: '发布', permission: 'publish:read' },
 ];
 
 function NavItem({
@@ -38,7 +38,9 @@ export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
-  const { logout } = useAuth();
+  const auth = useAuth();
+  const { logout } = auth;
+  const hasPermission = auth.hasPermission ?? (() => true);
   const location = useLocation();
   const navigate = useNavigate();
   const currentSection = navigation.find(
@@ -82,7 +84,7 @@ export function AppShell() {
     <div className={`workspace-shell${menuOpen ? ' menu-open' : ''}`}>
       <a className="skip-link" href="#main-content">跳到主要内容</a>
       <header className="admin-header">
-        <div className="admin-header-inner">
+        <div className="admin-header-inner glass">
           <NavLink className="admin-wordmark" to="/" aria-label="Aier Blog 后台首页">
             AIER<span>.</span>
           </NavLink>
@@ -97,7 +99,7 @@ export function AppShell() {
             <span /><span />
           </button>
           <nav id="admin-primary-navigation" className="admin-nav" aria-label="主导航">
-            {navigation.map((item) => <NavItem key={item.to} {...item} />)}
+            {navigation.filter((item) => hasPermission(item.permission)).map((item) => <NavItem key={item.to} {...item} />)}
           </nav>
           <div className="admin-utilities">
             <span className="admin-context" aria-label={'当前位置：' + currentSection}>{currentSection}</span>
@@ -119,9 +121,9 @@ export function AppShell() {
               </button>
               {settingsOpen && (
                 <nav id="admin-settings-menu" className="settings-menu" aria-label="设置菜单">
-                  <NavLink to="/trash" className={({ isActive }) => 'settings-menu-item' + (isActive ? ' is-active' : '')}>回收站</NavLink>
-                  <NavLink to="/backups" className={({ isActive }) => 'settings-menu-item' + (isActive ? ' is-active' : '')}>备份</NavLink>
-                  <NavLink to="/security" className={({ isActive }) => 'settings-menu-item' + (isActive ? ' is-active' : '')}>API 与安全</NavLink>
+                  {hasPermission('trash:read') && <NavLink to="/trash" className={({ isActive }) => 'settings-menu-item' + (isActive ? ' is-active' : '')}>回收站</NavLink>}
+                  {hasPermission('backups:read') && <NavLink to="/backups" className={({ isActive }) => 'settings-menu-item' + (isActive ? ' is-active' : '')}>备份</NavLink>}
+                  {(hasPermission('ai-keys:read') || hasPermission('admin-keys:read')) && <NavLink to="/security" className={({ isActive }) => 'settings-menu-item' + (isActive ? ' is-active' : '')}>密钥与安全</NavLink>}
                   <div className="settings-menu-divider" aria-hidden="true" />
                   <button className="settings-menu-item settings-menu-logout" type="button" onClick={handleLogout}>退出登录</button>
                 </nav>

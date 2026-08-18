@@ -128,7 +128,7 @@ describe('admin API', () => {
     };
     const created = await app.inject({
       method: 'POST',
-      url: '/api/auth/tokens',
+      url: '/api/auth/ai-keys',
       headers,
       payload: {
         name: 'AI writer',
@@ -139,18 +139,18 @@ describe('admin API', () => {
 
     expect(created.statusCode, created.body).toBe(201);
     expect(created.json()).toMatchObject({
-      token: expect.stringMatching(/^aier_pat_/),
+      token: expect.stringMatching(/^ai-/),
       record: { name: 'AI writer', scopes: ['posts:read', 'posts:write'] },
     });
 
-    const listed = await app.inject({ method: 'GET', url: '/api/auth/tokens' });
+    const listed = await app.inject({ method: 'GET', url: '/api/auth/ai-keys' });
     expect(listed.statusCode).toBe(200);
     expect(listed.json()).toMatchObject([{ id: created.json().record.id, name: 'AI writer' }]);
     expect(listed.body).not.toContain(created.json().token);
 
     const revoked = await app.inject({
       method: 'DELETE',
-      url: `/api/auth/tokens/${created.json().record.id}`,
+      url: `/api/auth/ai-keys/${created.json().record.id}`,
       headers,
     });
     expect(revoked.statusCode).toBe(200);

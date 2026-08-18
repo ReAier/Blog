@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -38,6 +39,10 @@ describe('image library Markdown copy', () => {
 
     render(<ConfirmDialogProvider><ImagesPage /></ConfirmDialogProvider>);
     const copyButton = await screen.findByRole('button', { name: '复制 Markdown' });
+    const deleteButton = screen.getByRole('button', { name: '删除' });
+    expect(copyButton).toHaveClass('image-card-action', 'image-card-copy');
+    expect(deleteButton).toHaveClass('image-card-action', 'image-card-delete');
+    expect(screen.getByRole('region', { name: '图片筛选' })).toHaveClass('image-filter-toolbar');
     expect(screen.queryByText(/引用|未使用/)).toBeNull();
 
     vi.useFakeTimers();
@@ -51,4 +56,3 @@ describe('image library Markdown copy', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 });
-

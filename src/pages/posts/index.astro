@@ -1,33 +1,15 @@
 ---
 import { getCollection } from 'astro:content';
+import PostListItem from '../../components/PostListItem.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { sortPostsNewestFirst } from '../../lib/content';
 const posts = sortPostsNewestFirst((await getCollection('blog')).filter((post) => !post.data.draft));
-const formatDate = (date: Date) => new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-}).format(date);
 ---
 <BaseLayout title="文章" description="Aier 的全部文章。">
   <header class="page-head container"><p class="eyebrow">All writing</p><h1 class="page-title">文章</h1><p class="lead">按时间排列的技术笔记、实践记录与个人思考。</p></header>
   <section class="section container">
     <ol class="post-list">
-      {posts.map((post) => (
-        <li class="post-list-item">
-          <a class="post-list-item__link" href={`/posts/${post.id}/`}>
-            <span class="post-list-item__dates">
-              <time datetime={post.data.publishedAt.toISOString()}>{formatDate(post.data.publishedAt)}</time>
-              {post.data.updatedAt && <span>更新于 {formatDate(post.data.updatedAt)}</span>}
-            </span>
-            <span class="post-list-item__content">
-              <h2>{post.data.title}</h2>
-              <span class="post-list-item__description">{post.data.description}</span>
-            </span>
-            {post.data.tags.length > 0 && <span class="post-list-item__tags" aria-label="标签">{post.data.tags.join(' · ')}</span>}
-          </a>
-        </li>
-      ))}
+      {posts.map((post) => <PostListItem post={post} />)}
     </ol>
   </section>
 </BaseLayout>

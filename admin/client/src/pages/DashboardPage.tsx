@@ -11,10 +11,10 @@ export function DashboardPage() {
   if (error || !data) return <ErrorBlock message={error || '工作台数据不可用'} onRetry={reload} />;
 
   const stats = [
-    { label: '全部文章', value: data.counts.posts, detail: `${data.counts.drafts} 篇草稿`, mark: '文' },
-    { label: '剪切板', value: data.counts.clips, detail: '独立复用内容', mark: '</>' },
-    { label: '图片资产', value: data.counts.images, detail: formatBytes(data.storageBytes), mark: '▧' },
-    { label: '最近发布', value: data.latestPublish?.status === 'succeeded' ? '正常' : data.latestPublish?.status ?? '暂无', detail: data.latestPublish ? formatDate(data.latestPublish.startedAt) : '尚无记录', mark: '↗' },
+    { label: '全部文章', value: data.counts.posts, detail: `${data.counts.drafts} 篇草稿`, mark: '文', to: '/posts' },
+    { label: '剪切板', value: data.counts.clips, detail: formatBytes(data.clipStorageBytes), mark: '</>', to: '/clips' },
+    { label: '图片资产', value: data.counts.images, detail: formatBytes(data.imageStorageBytes), mark: '▧', to: '/images' },
+    { label: '最近发布', value: data.latestPublish?.status === 'succeeded' ? '正常' : data.latestPublish?.status ?? '暂无', detail: data.latestPublish ? formatDate(data.latestPublish.startedAt) : '尚无记录', mark: '↗', to: '/publish' },
   ];
 
   return (
@@ -27,27 +27,36 @@ export function DashboardPage() {
       />
       <section className="stat-grid" aria-label="内容统计">
         {stats.map((stat, index) => (
-          <article className="stat-card" key={stat.label}>
+          <Link className="stat-card" key={stat.label} to={stat.to}>
             <span className="stat-index">0{index + 1}</span>
             <span className="stat-mark" aria-hidden="true">{stat.mark}</span>
             <strong>{stat.value}</strong>
             <h2>{stat.label}</h2>
             <p>{stat.detail}</p>
-          </article>
+          </Link>
         ))}
       </section>
       <div className="dashboard-grid">
-        <SectionCard title="最近稿件" eyebrow="Recent desk" action={<Link className="text-link" to="/posts">查看全部 →</Link>}>
-          <div className="story-list">
+        <SectionCard title="最近稿件" eyebrow="Recent desk" className="recent-posts-card" action={<Link className="text-link" to="/posts">查看全部 →</Link>}>
+          <div className="editorial-resource-list dashboard-story-list">
             {data.recentPosts.length ? data.recentPosts.slice(0, 6).map((post, index) => (
-              <Link className="story-row" key={post.slug} to={`/posts/${encodeURIComponent(post.slug)}`}>
-                <span className="story-number">{String(index + 1).padStart(2, '0')}</span>
-                <span className="story-main"><strong>{post.title}</strong><small>{post.slug} · {formatDate(post.updatedAt || post.publishedAt)}</small></span>
-                <span className={`status-pill ${post.draft ? 'status-draft' : 'status-live'}`}>{post.draft ? '草稿' : '已发布'}</span>
-              </Link>
+              <article className="editorial-resource-row dashboard-story-row" key={post.slug}>
+                <Link className="editorial-resource-link" to={`/posts/${encodeURIComponent(post.slug)}`} aria-label={`打开文章 ${post.title}`}>
+                  <span className="editorial-resource-meta">
+                    <span className="story-number">{String(index + 1).padStart(2, '0')}</span>
+                    <small>{formatDate(post.updatedAt || post.publishedAt)}</small>
+                  </span>
+                  <span className="editorial-resource-main">
+                    <strong className="editorial-resource-title">{post.title}</strong>
+                    <small className="editorial-resource-detail">{post.slug}</small>
+                  </span>
+                  <span className="editorial-resource-aside">
+                    <span className={`status-pill ${post.draft ? 'status-draft' : 'status-live'}`}>{post.draft ? '草稿' : '已发布'}</span>
+                  </span>
+                </Link>
+              </article>
             )) : <p className="muted-copy">还没有稿件。从第一篇文章开始。</p>}
-          </div>
-        </SectionCard>
+          </div>        </SectionCard>
         <SectionCard title="发布脉搏" eyebrow="Production" className="publish-pulse">
           <div className={`publish-orbit status-${data.latestPublish?.status ?? 'idle'}`} aria-hidden="true"><span /></div>
           <div className="pulse-copy">

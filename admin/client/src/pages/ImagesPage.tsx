@@ -129,7 +129,7 @@ export function ImagesPage() {
           <button type="button" aria-label="关闭提示" onClick={() => setMessage(undefined)}>×</button>
         </div>
       )}
-      <section className="toolbar paper-strip" aria-label="图片筛选">
+      <section className="toolbar paper-strip image-filter-toolbar" aria-label="图片筛选">
         <label className="search-field">
           <span aria-hidden="true">⌕</span>
           <span className="sr-only">搜索图片</span>
@@ -163,9 +163,9 @@ export function ImagesPage() {
                   <p>{formatDate(image.createdAt)}</p>
                 </div>
                 <footer>
-                  <button type="button" onClick={() => void copy(markdown)}>复制 Markdown</button>
+                  <button className="image-card-action image-card-copy" type="button" onClick={() => void copy(markdown)}>复制 Markdown</button>
                   <button
-                    className="danger-text"
+                    className="image-card-action image-card-delete"
                     type="button"
                     onClick={() => void remove(image.id, image.originalName || image.name)}
                   >
