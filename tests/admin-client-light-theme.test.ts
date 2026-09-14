@@ -45,8 +45,6 @@ describe('admin light theme surface contract', () => {
       'background: var(--danger-surface);',
       'background: var(--status-surface);',
       'background: var(--tag-surface);',
-      'background: var(--editor-shell-surface);',
-      'background: var(--frontmatter-surface);',
       'background: var(--input-surface);',
     ]) expect(css).toContain(declaration);
 
@@ -63,6 +61,10 @@ describe('admin light theme surface contract', () => {
       'background: rgba(16, 19, 21, .98);',
       'background: rgba(77, 28, 25, .96);',
     ]) expect(css).not.toContain(forcedDark);
+
+    expect(css).toMatch(/\.frontmatter-panel,[\s\S]*?\.writing-panel,[\s\S]*?\.preview-panel\s*\{[^}]*background:\s*var\(--article-glass-surface\)/s);
+    expect(css).not.toContain('background: var(--frontmatter-surface);');
+    expect(css).not.toContain('background: var(--editor-shell-surface);');
 
     expect(css).not.toContain('.switch-row input { background: #555b60; }');
   });

@@ -13,6 +13,7 @@ import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { automaticPostSlug, todayInShanghai } from '../lib/content-defaults';
 import { createImageMarkdown, imageAssetMatchesPath } from '../lib/editor-actions';
 import { reconcileSavedDraft } from '../lib/save-reconciliation';
+import { applyPreviewTheme, observePreviewTheme } from '../lib/preview';
 import type {
   ClipSummary,
   ImageAsset,
@@ -212,7 +213,14 @@ export function PostEditorPage() {
         ? api.previewInstant(draft.body)
         : api.previewPost(slug);
       void request.then((result) => {
-        if (active) setPreview(result.html);
+        if (active) {
+          const root = document.documentElement;
+          setPreview(applyPreviewTheme(result.html, {
+            theme: root.dataset.theme,
+            accent: root.dataset.accent,
+            background: root.dataset.background,
+          }));
+        }
       }).catch(() => {
         if (active) setPreview('<p>即时预览生成失败，请检查 Markdown。</p>');
       });
@@ -222,6 +230,10 @@ export function PostEditorPage() {
       window.clearTimeout(timer);
     };
   }, [canRenderInstantPreview, draft.body, isNew, slug]);
+
+  useEffect(() => observePreviewTheme(document.documentElement, (theme) => {
+    setPreview((current) => applyPreviewTheme(current, theme));
+  }), []);
 
   const updateFrontmatter = <K extends keyof PostFrontmatter>(key: K, value: PostFrontmatter[K]) => {
     setDraft((current) => ({
@@ -514,7 +526,7 @@ export function PostEditorPage() {
         <PickerDialog title="图片素材" onClose={() => { setShowImagePicker(false); setImageQuery(''); }}>
           <label className="upload-strip"><input type="file" accept="image/jpeg,image/png,image/webp" disabled={resourceBusy} onChange={(event) => void uploadImage(event.target.files?.[0])} /><span>{resourceBusy ? '正在处理图片…' : '上传 JPEG / PNG / WebP（自动转 WebP）'}</span></label>
           <label className="search-field picker-search-field"><span aria-hidden="true">⌕</span><span className="sr-only">按文件名搜索图片</span><input type="search" placeholder="按文件名搜索图片" value={imageQuery} onChange={(event) => setImageQuery(event.target.value)} /></label>
-          {!filteredImages.length ? <p className="empty-inline">没有匹配的图片。</p> : filteredImages.map((image) => <div className="picker-item image-picker-item" key={image.id}><img src={image.url} alt="" /><span><strong>{image.originalName || image.name}</strong><small>{image.width} × {image.height}</small></span><div className="picker-actions"><button type="button" onClick={() => { editor?.insertText(createImageMarkdown({ alt: image.originalName || image.name, path: image.markdownPath || image.url })); setShowImagePicker(false); setImageQuery(''); }}>插入正文</button><button type="button" onClick={() => { updateFrontmatter('cover', image.markdownPath || image.url); setShowImagePicker(false); setImageQuery(''); }}>设为封面</button></div></div>)}
+          {!filteredImages.length ? <p className="empty-inline">没有匹配的图片。</p> : filteredImages.map((image) => <button className="picker-item image-picker-item" type="button" key={image.id} aria-label={`插入图片 ${image.originalName || image.name}`} onClick={() => { editor?.insertText(createImageMarkdown({ alt: image.originalName || image.name, path: image.publicUrl })); setShowImagePicker(false); setImageQuery(''); }}><img src={image.url} alt="" /><span><strong>{image.originalName || image.name}</strong><small>{image.width} × {image.height}</small></span></button>)}
         </PickerDialog>
       )}
 

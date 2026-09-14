@@ -20,9 +20,11 @@ describe('admin editor insertion helpers', () => {
 
   it('matches managed image paths across editor and API formats', () => {
     const asset = { markdownPath: '../images/post/cover.webp', relativePath: 'images/post/cover.webp', url: '/api/images/id/content' };
+    const publicAsset = { ...asset, publicUrl: 'https://blog.reaier.top/media/post/cover.webp' };
     expect(imageAssetMatchesPath(asset, '../images/post/cover.webp')).toBe(true);
     expect(imageAssetMatchesPath(asset, 'images/post/cover.webp')).toBe(true);
     expect(imageAssetMatchesPath(asset, '/media/post/cover.webp')).toBe(true);
+    expect(imageAssetMatchesPath(publicAsset, 'https://blog.reaier.top/media/post/cover.webp')).toBe(true);
   });
 });
 
@@ -59,6 +61,13 @@ describe('admin content editor source contracts', () => {
     expect(page).toContain('选择封面');
     expect(page).not.toContain('使用逗号分隔。');
     expect(page).not.toContain('placeholder="../images/post/cover.webp"');
+    expect(page).toContain('image.publicUrl');
+    expect(page).toContain('editor?.insertText');
+    expect(page).not.toContain('插入正文</button>');
+    expect(page).not.toContain('设为封面</button>');
+    expect(page).not.toContain('picker-actions');
+    expect(page).not.toContain('path: image.markdownPath || image.url');
+    expect(page).not.toContain("updateFrontmatter('cover', image.markdownPath || image.url)");
     expect(page).not.toContain('创建后请使用显式迁移');
     expect(page).not.toContain('参与 featured 排序');
     expect(pickers).toContain('<Dialog');
@@ -71,7 +80,12 @@ describe('admin content editor source contracts', () => {
     expect(page).toContain("import { Dialog } from '../components/Dialog'");
     expect(page).not.toContain('createPortal');
     expect(pickers).not.toContain('<span>新建标签</span>');
-    expect(pickers).toContain('image.markdownPath');
+    expect(pickers).toContain('image.publicUrl');
+    expect(pickers).toContain('cover-picker-clear-card');
+    expect(pickers).toContain('清除图片');
+    expect(pickers).not.toContain('从图片库已有资源中选择');
+    expect(pickers).not.toContain('清除封面');
+    expect(pickers).not.toContain('onSelect(image.markdownPath)');
   });
   it('uses a compact clip import button and metadata dialog', async () => {
     const page = await readClient('pages/ClipsPage.tsx');

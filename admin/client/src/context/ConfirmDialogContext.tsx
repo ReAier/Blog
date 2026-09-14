@@ -78,16 +78,15 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
           initialFocusRef={cancelButtonRef}
           onClose={() => finish(false)}
         >
-          <header className="confirm-dialog__header">
-            <div>
+          <div className="confirm-dialog__content">
+            <span className="confirm-dialog__signal" aria-hidden="true">
+              <span />
+            </span>
+            <div className="confirm-dialog__copy">
               <span className="eyebrow">{options.eyebrow ?? 'Confirm action'}</span>
               <h2 id={titleId}>{options.title}</h2>
+              <p id={descriptionId}>{options.message}</p>
             </div>
-            <span className="confirm-dialog__index" aria-hidden="true">?</span>
-          </header>
-          <div className="confirm-dialog__body">
-            <span className="confirm-dialog__mark" aria-hidden="true">!</span>
-            <p id={descriptionId}>{options.message}</p>
           </div>
           <footer className="confirm-dialog__actions">
             <button ref={cancelButtonRef} className="secondary-button" type="button" onClick={() => finish(false)}>

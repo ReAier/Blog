@@ -98,6 +98,12 @@ describe('admin client source contract', () => {
 
     expect(await source('src/pages/ImagesPage.tsx')).toContain('accept="image/jpeg,image/png,image/webp"');
     expect(await source('src/pages/BackupsPage.tsx')).toContain('创建备份');
+    const trash = await source('src/pages/TrashPage.tsx');
+    expect(trash).toContain('post-title-search');
+    expect(trash).toContain('role="search"');
+    expect(trash).toContain('type="search"');
+    expect(trash).toContain('item.title');
+    expect(trash).toContain('item.detail');
     expect(await source('src/pages/PublishPage.tsx')).toContain('aria-live="polite"');
   });
 
@@ -277,7 +283,7 @@ describe('admin client source contract', () => {
     ]);
     const css = `${entryCss}\n${themeCss}`;
 
-    expect(entryCss.trimStart()).toMatch(/^@import '\.\.\/\.\.\/\.\.\/src\/styles\/glass-material\.css';\r?\n@import '\.\/styles\/theme\.css';/);
+    expect(entryCss.trimStart()).toMatch(/^@import '\.\.\/\.\.\/\.\.\/src\/styles\/glass-material\.css';\r?\n@import '\.\.\/\.\.\/\.\.\/src\/styles\/site-header\.css';\r?\n@import '\.\/styles\/theme\.css';/);
     expect(css).toContain('--paper:');
     expect(css).toContain('--accent: #c74776');
     expect(css).toContain("--page-background: url('/site-background.webp')");

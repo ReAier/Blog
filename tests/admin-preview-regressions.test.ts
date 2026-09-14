@@ -24,6 +24,13 @@ describe('admin preview regressions', () => {
     expect(html).toContain('class="prose"');
     expect(html).toContain('.problem-card{border:1px solid red}');
     expect(html).toContain('.katex-mathml{position:absolute');
+    expect(html).toContain('html,body{min-height:100%;background-color:transparent!important;background-image:none!important}');
+    expect(html).toContain('.page-background{display:none!important}');
+    const applyPreviewTheme = (previewModule as Record<string, unknown>).applyPreviewTheme;
+    expect(applyPreviewTheme).toBeTypeOf('function');
+    if (typeof applyPreviewTheme === 'function') {
+      expect(applyPreviewTheme(html, { theme: 'light', accent: 'teal', background: 'background-2' })).toContain('data-theme="light" data-accent="teal" data-background="background-2"');
+    }
   });
 
 

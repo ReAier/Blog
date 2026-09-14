@@ -73,9 +73,9 @@ export function ImagesPage() {
     }
   };
 
-  const copy = async (markdown: string) => {
-    await navigator.clipboard.writeText(markdown);
-    showTransientMessage('Markdown 已复制到剪贴板。');
+  const copy = async (value: string, message: string) => {
+    await navigator.clipboard.writeText(value);
+    showTransientMessage(message);
   };
 
   const remove = async (id: string, name: string) => {
@@ -130,7 +130,7 @@ export function ImagesPage() {
         </div>
       )}
       <section className="toolbar paper-strip image-filter-toolbar" aria-label="图片筛选">
-        <label className="search-field">
+        <form className="search-field post-title-search" role="search" onSubmit={(event) => event.preventDefault()}>
           <span aria-hidden="true">⌕</span>
           <span className="sr-only">搜索图片</span>
           <input
@@ -139,7 +139,7 @@ export function ImagesPage() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-        </label>
+        </form>
       </section>
       {loading ? <LoadingBlock label="正在读取图片索引…" /> : error ? (
         <ErrorBlock message={error} onRetry={reload} />
@@ -163,7 +163,8 @@ export function ImagesPage() {
                   <p>{formatDate(image.createdAt)}</p>
                 </div>
                 <footer>
-                  <button className="image-card-action image-card-copy" type="button" onClick={() => void copy(markdown)}>复制 Markdown</button>
+                  <button className="image-card-action image-card-copy" type="button" onClick={() => void copy(markdown, 'Markdown 已复制到剪贴板。')}>复制 Markdown</button>
+                  <button className="image-card-action image-card-address" type="button" onClick={() => void copy(image.publicUrl, '图片地址已复制到剪贴板。')}>复制地址</button>
                   <button
                     className="image-card-action image-card-delete"
                     type="button"

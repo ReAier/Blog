@@ -9,8 +9,8 @@ describe('admin app shell behavior', () => {
   it('renders all destinations as route links in the persistent top navigation', async () => {
     const shell = await read('src/components/AppShell.tsx');
 
-    expect(shell).toContain('<header className="admin-header">');
-    expect(shell).toContain('<nav id="admin-primary-navigation" className="admin-nav" aria-label="主导航">');
+    expect(shell).toContain('<header className="admin-header site-header">');
+    expect(shell).toContain('<nav id="admin-primary-navigation" className="admin-nav site-nav" aria-label="主导航">');
     expect(shell).toContain('<NavLink');
     expect(shell).toContain('setMenuOpen(false);');
     expect(shell).not.toContain('menu-scrim');

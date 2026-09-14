@@ -368,6 +368,23 @@ describe('admin API client contract', () => {
     database.close();
   });
 
+  it('reports manifest file counts when listing stored backups', async () => {
+    const { app, database } = await fixture();
+    const created = await app.inject({ method: 'POST', url: '/api/backups', headers: writeHeaders });
+    expect(created.statusCode, created.body).toBe(201);
+
+    const listed = await app.inject({ method: 'GET', url: '/api/backups' });
+    expect(listed.statusCode, listed.body).toBe(200);
+    expect(listed.json()).toEqual([
+      expect.objectContaining({
+        id: created.json().id,
+        fileCount: 1,
+      }),
+    ]);
+    await app.close();
+    database.close();
+  });
+
   it('validates a stored backup before applying it and exposes no one-step restore route', async () => {
     const { app, database } = await fixture();
     const created = await app.inject({ method: 'POST', url: '/api/backups', headers: writeHeaders });

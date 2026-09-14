@@ -18,7 +18,7 @@ const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
 function validateSlug(slug: string): void {
   if (!slugPattern.test(slug)) {
-    throw new ContentValidationError('Post slug must use lowercase kebab-case.', { slug });
+    throw new ContentValidationError('Post slug must use kebab-case letters and numbers.', { slug });
   }
 }
 

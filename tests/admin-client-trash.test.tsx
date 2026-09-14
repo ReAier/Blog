@@ -69,6 +69,21 @@ describe('unified trash page', () => {
   });
 
 
+  it('searches trash titles and details while preserving type counts', async () => {
+    apiMocks.listTrash.mockResolvedValue({ items: [
+      { id: 'post-one', type: 'post', title: '旅行笔记', detail: 'tokyo-notes', deletedAt: '2026-08-17T08:00:00.000Z' },
+      { id: 'clip-id', type: 'clip', title: '代码片段', detail: 'sample.ts', deletedAt: '2026-08-17T07:00:00.000Z' },
+    ] });
+
+    render(<ConfirmDialogProvider><TrashPage /></ConfirmDialogProvider>);
+
+    expect(await screen.findByRole('search')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('searchbox', { name: '搜索回收站内容' }), { target: { value: 'TOKYO' } });
+    expect(screen.getByText('旅行笔记')).toBeInTheDocument();
+    expect(screen.queryByText('代码片段')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '全部 2' })).toBeInTheDocument();
+  });
+
   it('permanently deletes a trash item after an irreversible confirmation', async () => {
     apiMocks.listTrash
       .mockResolvedValueOnce({ items: [

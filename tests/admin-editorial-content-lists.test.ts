@@ -34,9 +34,10 @@ describe('admin editorial content lists', () => {
   });
 
   it('uses rounded frosted glass for status, search, and tag filters', async () => {
-    const [dashboard, styles] = await Promise.all([
+    const [dashboard, styles, sharedHeader] = await Promise.all([
       readAdmin('pages/DashboardPage.tsx'),
       readAdmin('styles.css'),
+      readFile(new URL('../src/styles/site-header.css', import.meta.url), 'utf8'),
     ]);
 
     expect(dashboard).toContain('className="recent-posts-card"');
@@ -51,7 +52,7 @@ describe('admin editorial content lists', () => {
     expect(styles).toMatch(/\.blog-select__menu\s*\{[^}]*border-radius:\s*18px[^}]*background:\s*var\(--article-glass-surface\)[^}]*backdrop-filter:\s*blur\(var\(--article-glass-blur\)\) saturate\(var\(--article-glass-saturation\)\)/s);
     expect(styles).toMatch(/\.image-filter-toolbar\s*\{[^}]*background:\s*transparent[^}]*border:\s*0[^}]*backdrop-filter:\s*none/s);
     expect(styles).toMatch(/\.image-card footer \.image-card-action\s*\{[^}]*border-radius:\s*999px[^}]*backdrop-filter:\s*blur\(12px\)/s);
-    expect(styles).toMatch(/\.settings-trigger\s*\{[^}]*background:\s*var\(--article-glass-surface\)[^}]*backdrop-filter:\s*blur\(12px\)/s);
+    expect(sharedHeader).toMatch(/\.icon-button\s*\{[^}]*background:\s*rgba\(var\(--accent-rgb\), \.05\)/s);
     expect(styles).toMatch(/\.settings-menu\s*\{[^}]*background:\s*var\(--article-glass-surface\)[^}]*backdrop-filter:\s*blur\(var\(--article-glass-blur\)\)/s);
   });
   it('keeps clipboard deletion outside the editor link', async () => {
@@ -64,8 +65,11 @@ describe('admin editorial content lists', () => {
   it('keeps the public post-list frosted glass material', async () => {
     const styles = await readAdmin('styles.css');
 
-    expect(styles).toMatch(/\.editorial-resource-list\s*\{[^}]*background:\s*var\(--article-glass-surface\)[^}]*box-shadow:\s*inset 0 1px rgba\(255, 255, 255, \.06\), var\(--article-glass-shadow\)[^}]*-webkit-backdrop-filter:\s*blur\(var\(--article-glass-blur\)\) saturate\(var\(--article-glass-saturation\)\)[^}]*backdrop-filter:\s*blur\(var\(--article-glass-blur\)\) saturate\(var\(--article-glass-saturation\)\)/s);
-    expect(styles).toMatch(/@supports not \(\(backdrop-filter:\s*blur\(1px\)\) or \(-webkit-backdrop-filter:\s*blur\(1px\)\)\)[\s\S]*\.editorial-resource-list\s*\{[^}]*background:\s*var\(--article-glass-surface-fallback\)/s);
+    const sharedRule = styles.match(/\.page-header,[\s\S]*?\.preview-panel\s*\{[\s\S]*?\}/)?.[0] ?? '';
+    expect(sharedRule).toContain('.editorial-resource-list,');
+    expect(sharedRule).toContain('background: var(--article-glass-surface);');
+    expect(sharedRule).toContain('box-shadow: inset 0 1px rgba(255, 255, 255, .06), var(--article-glass-shadow);');
+    expect(styles).toMatch(/@supports not[\s\S]*?\.editorial-resource-list,[\s\S]*?\.preview-panel \{ background: var\(--article-glass-surface-fallback\); \}/s);
   });
   it('defines themed hover, focus, responsive, and reduced-motion behavior', async () => {
     const [styles, theme] = await Promise.all([

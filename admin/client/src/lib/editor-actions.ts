@@ -13,7 +13,13 @@ export function createImageMarkdown(input: ImageMarkdownInput) {
 
 export function normalizeManagedImagePath(value?: string) {
   if (!value) return '';
-  return value
+  let normalized = value;
+  try {
+    normalized = new URL(value).pathname;
+  } catch {
+    // Keep relative and root-relative paths as-is.
+  }
+  return normalized
     .replaceAll('\\', '/')
     .replace(/^\.\.\/images\//, '')
     .replace(/^\.\//, '')
@@ -22,9 +28,9 @@ export function normalizeManagedImagePath(value?: string) {
     .replace(/^\//, '');
 }
 
-export function imageAssetMatchesPath(asset: { markdownPath: string; relativePath?: string; url: string }, value?: string) {
+export function imageAssetMatchesPath(asset: { markdownPath: string; relativePath?: string; url: string; publicUrl?: string }, value?: string) {
   const target = normalizeManagedImagePath(value);
-  return Boolean(target) && [asset.markdownPath, asset.relativePath, asset.url].some((path) => normalizeManagedImagePath(path) === target);
+  return Boolean(target) && [asset.markdownPath, asset.relativePath, asset.url, asset.publicUrl].some((path) => normalizeManagedImagePath(path) === target);
 }
 
 export function normalizeCodeLanguage(value: string | undefined): string | undefined {

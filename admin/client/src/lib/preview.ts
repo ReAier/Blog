@@ -92,6 +92,48 @@ function safeStyleText(value: string): string {
   return value.replaceAll('</style', '<\\/style');
 }
 
+export interface PreviewTheme {
+  theme: string;
+  accent: string;
+  background: string;
+}
+
+function previewThemeValue(value: string | undefined, fallback: string): string {
+  return /^[a-z0-9-]+$/i.test(value ?? '') ? value as string : fallback;
+}
+
+export function applyPreviewTheme(documentHtml: string, theme: Partial<PreviewTheme>): string {
+  const dataTheme = previewThemeValue(theme.theme, 'dark');
+  const dataAccent = previewThemeValue(theme.accent, 'rose');
+  const dataBackground = previewThemeValue(theme.background, 'default');
+  return documentHtml.replace(
+    /<html lang="zh-CN"[^>]*>/,
+    `<html lang="zh-CN" data-theme="${dataTheme}" data-accent="${dataAccent}" data-background="${dataBackground}">`,
+  );
+}
+
+function previewThemeFromRoot(root: HTMLElement): PreviewTheme {
+  return {
+    theme: previewThemeValue(root.dataset.theme, 'dark'),
+    accent: previewThemeValue(root.dataset.accent, 'rose'),
+    background: previewThemeValue(root.dataset.background, 'default'),
+  };
+}
+
+export function observePreviewTheme(
+  root: HTMLElement,
+  onChange: (theme: PreviewTheme) => void,
+): () => void {
+  const notify = () => onChange(previewThemeFromRoot(root));
+  const observer = new MutationObserver(notify);
+  observer.observe(root, {
+    attributes: true,
+    attributeFilter: ['data-theme', 'data-accent', 'data-background'],
+  });
+  notify();
+  return () => observer.disconnect();
+}
+
 export function buildInstantPreviewDocument(
   renderedHtml: string,
   siteCss: string,
@@ -106,7 +148,7 @@ export function buildInstantPreviewDocument(
 <style>${safeStyleText(siteCss)}</style>
 <style>${safeStyleText(katexCss)}</style>
 <style>
-html,body{min-height:100%}.instant-preview-main{padding:clamp(20px,4vw,46px) 0 72px}.instant-preview-layout{grid-template-columns:minmax(0,var(--reading));justify-content:center}.instant-preview-layout>.prose{min-width:0}.instant-preview-empty{color:var(--muted)}
+html,body{min-height:100%;background-color:transparent!important;background-image:none!important}.page-background{display:none!important}.instant-preview-main{padding:clamp(20px,4vw,46px) 0 72px;background:transparent}.instant-preview-layout{grid-template-columns:minmax(0,var(--reading));justify-content:center}.instant-preview-layout>.prose{min-width:0}.instant-preview-empty{color:var(--muted)}
 </style>
 </head>
 <body data-page-kind="article">

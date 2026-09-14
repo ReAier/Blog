@@ -83,13 +83,13 @@ export function AppShell() {
   return (
     <div className={`workspace-shell${menuOpen ? ' menu-open' : ''}`}>
       <a className="skip-link" href="#main-content">跳到主要内容</a>
-      <header className="admin-header">
-        <div className="admin-header-inner glass">
-          <NavLink className="admin-wordmark" to="/" aria-label="Aier Blog 后台首页">
+      <header className="admin-header site-header">
+        <div className="admin-header-inner nav-shell glass">
+          <NavLink className="admin-wordmark site-mark" to="/" aria-label="Aier Blog 后台首页">
             AIER<span>.</span>
           </NavLink>
           <button
-            className="menu-button"
+            className="menu-button icon-button"
             type="button"
             aria-label="切换主导航"
             aria-expanded={menuOpen}
@@ -98,15 +98,15 @@ export function AppShell() {
           >
             <span /><span />
           </button>
-          <nav id="admin-primary-navigation" className="admin-nav" aria-label="主导航">
+          <nav id="admin-primary-navigation" className="admin-nav site-nav" aria-label="主导航">
             {navigation.filter((item) => hasPermission(item.permission)).map((item) => <NavItem key={item.to} {...item} />)}
           </nav>
-          <div className="admin-utilities">
+          <div className="admin-utilities header-actions">
             <span className="admin-context" aria-label={'当前位置：' + currentSection}>{currentSection}</span>
             <AppearanceControls />
             <div className="settings-control" ref={settingsRef}>
               <button
-                className="settings-trigger"
+                className="settings-trigger icon-button"
                 type="button"
                 aria-label="设置"
                 aria-expanded={settingsOpen}

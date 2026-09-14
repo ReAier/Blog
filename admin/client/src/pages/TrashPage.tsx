@@ -20,6 +20,7 @@ export function TrashPage() {
   const [deletingKey, setDeletingKey] = useState<string>();
   const [message, setMessage] = useState<string>();
   const [filter, setFilter] = useState<TrashFilter>('all');
+  const [query, setQuery] = useState('');
   const items = data?.items ?? [];
   const counts: Record<TrashFilter, number> = {
     all: items.length,
@@ -27,7 +28,12 @@ export function TrashPage() {
     clip: items.filter((item) => item.type === 'clip').length,
     image: items.filter((item) => item.type === 'image').length,
   };
-  const visibleItems = filter === 'all' ? items : items.filter((item) => item.type === filter);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const visibleItems = items.filter((item) => {
+    const matchesFilter = filter === 'all' || item.type === filter;
+    const matchesQuery = !normalizedQuery || (item.title + ' ' + item.detail).toLocaleLowerCase().includes(normalizedQuery);
+    return matchesFilter && matchesQuery;
+  });
   const filters: Array<{ value: TrashFilter; label: string }> = [
     { value: 'all', label: '全部' },
     { value: 'post', label: typeLabels.post },
@@ -89,6 +95,9 @@ export function TrashPage() {
       {message && <div className="inline-notice" role="status">{message}<button type="button" aria-label="关闭提示" onClick={() => setMessage(undefined)}>×</button></div>}
       {!loading && !error && !!items.length && (
         <section className="toolbar paper-strip" aria-label="回收站筛选">
+          <form className="search-field post-title-search" role="search" onSubmit={(event) => event.preventDefault()}>
+            <span aria-hidden="true">⌕</span><label className="sr-only" htmlFor="trash-search">搜索回收站内容</label><input id="trash-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索回收站内容" />
+          </form>
           <div className="filter-tabs" aria-label="回收站类型筛选">
             {filters.map((option) => (
               <button
@@ -109,7 +118,7 @@ export function TrashPage() {
       ) : !items.length ? (
         <EmptyBlock title="回收站是空的" detail="删除的文章、剪切内容和图片会统一出现在这里。" />
       ) : !visibleItems.length ? (
-        <EmptyBlock title={`没有${filter === 'all' ? '内容' : typeLabels[filter]}`} detail="切换其他类型查看回收站内容。" />
+        <EmptyBlock title={normalizedQuery ? '没有匹配的回收站内容' : `没有${filter === 'all' ? '内容' : typeLabels[filter]}`} detail={normalizedQuery ? '尝试搜索其他标题或详情。' : '切换其他类型查看回收站内容。'} />
       ) : (
         <section className="data-table-wrap">
           <table className="data-table trash-table" aria-label="回收站列表">

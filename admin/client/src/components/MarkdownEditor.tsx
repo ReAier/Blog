@@ -124,7 +124,7 @@ export function MarkdownEditor({
             },
             '.cm-gutters': {
               color: 'var(--editor-muted)',
-              backgroundColor: 'var(--editor-gutter)',
+              backgroundColor: 'transparent',
               border: 'none',
               borderRight: '1px solid var(--line)',
             },

@@ -39,10 +39,13 @@ describe('image library Markdown copy', () => {
 
     render(<ConfirmDialogProvider><ImagesPage /></ConfirmDialogProvider>);
     const copyButton = await screen.findByRole('button', { name: '复制 Markdown' });
+    const addressButton = screen.getByRole('button', { name: '复制地址' });
     const deleteButton = screen.getByRole('button', { name: '删除' });
     expect(copyButton).toHaveClass('image-card-action', 'image-card-copy');
+    expect(addressButton).toHaveClass('image-card-action', 'image-card-address');
     expect(deleteButton).toHaveClass('image-card-action', 'image-card-delete');
     expect(screen.getByRole('region', { name: '图片筛选' })).toHaveClass('image-filter-toolbar');
+    expect(screen.getByRole('search')).toHaveClass('search-field', 'post-title-search');
     expect(screen.queryByText(/引用|未使用/)).toBeNull();
 
     vi.useFakeTimers();
@@ -51,6 +54,9 @@ describe('image library Markdown copy', () => {
 
     expect(writeText).toHaveBeenCalledWith('![picture.webp](https://blog.reaier.top/media/picture.webp)');
     expect(screen.getByRole('status').textContent).toContain('Markdown 已复制到剪贴板。');
+
+    await act(async () => { fireEvent.click(addressButton); await Promise.resolve(); });
+    expect(writeText).toHaveBeenLastCalledWith('https://blog.reaier.top/media/picture.webp');
 
     act(() => vi.advanceTimersByTime(3_000));
     expect(screen.queryByRole('status')).toBeNull();

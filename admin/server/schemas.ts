@@ -1,7 +1,7 @@
 import type { FastifySchema } from 'fastify';
 
 const datePattern = '^\\d{4}-\\d{2}-\\d{2}$';
-const slugPattern = '^[a-z0-9]+(?:-[a-z0-9]+)*$';
+const slugPattern = '^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$';
 const positiveIntegerPattern = '^[1-9]\\d*$';
 
 export const openObjectSchema = {

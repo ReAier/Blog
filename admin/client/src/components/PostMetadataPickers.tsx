@@ -130,18 +130,24 @@ interface CoverPickerProps {
 export function CoverPickerDialog({ images, selected, onSelect, onClose }: CoverPickerProps) {
   return (
     <DialogFrame title="选择封面" titleId="cover-picker-title" onClose={onClose}>
-      <div className="dialog-actions cover-picker-actions">
-        <span className="muted-copy">从图片库已有资源中选择</span>
-        {selected && <button className="danger-text" type="button" onClick={() => onSelect(undefined)}>清除封面</button>}
-      </div>
       <div className="cover-picker-grid">
+        <button
+          className="cover-picker-card cover-picker-clear-card"
+          type="button"
+          aria-pressed={!selected}
+          onClick={() => onSelect(undefined)}
+        >
+          <span className="cover-picker-clear-icon" aria-hidden="true">×</span>
+          <strong>清除图片</strong>
+        </button>
+
         {!images.length ? <p className="empty-inline">图片库还是空的。</p> : images.map((image) => (
           <button
             className="cover-picker-card"
             type="button"
             key={image.id}
             aria-pressed={imageAssetMatchesPath(image, selected)}
-            onClick={() => onSelect(image.markdownPath)}
+            onClick={() => onSelect(image.publicUrl)}
           >
             <img src={image.url} alt="" />
             <span>

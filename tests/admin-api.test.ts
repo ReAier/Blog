@@ -23,7 +23,7 @@ async function fixture() {
     repository: createContentRepository({ root: contentRoot }),
     authOverride: async () => ({ adminId: 1, username: 'owner', csrfToken: 'csrf' }),
   });
-  return { app, database };
+  return { app, database, contentRoot };
 }
 
 function multipartMarkdown(fileName: string, markdown: string) {
@@ -174,6 +174,41 @@ describe('admin API', () => {
     await app.close(); database.close();
   });
 
+  it('updates existing posts whose filenames contain uppercase letters', async () => {
+    const { app, database, contentRoot } = await fixture();
+    await writeFile(join(contentRoot, 'blog', 'BitDP.md'), '---\ntitle: Bit DP\ndescription: Existing uppercase filename\npublishedAt: 2026-08-13\ntags: []\ndraft: true\nfeatured: false\n---\n\nBody\n');
+
+    const current = await app.inject({ method: 'GET', url: '/api/posts/BitDP' });
+    expect(current.statusCode, current.body).toBe(200);
+    const post = current.json();
+    const update = await app.inject({
+      method: 'PUT',
+      url: '/api/posts/BitDP',
+      headers: {
+        origin: 'https://admin.blog.reaier.top',
+        'x-csrf-token': 'csrf',
+        'if-match': post.revision,
+      },
+      payload: {
+        slug: 'BitDP',
+        frontmatter: {
+          title: 'Updated Bit DP',
+          description: 'Updated description',
+          publishedAt: '2026-08-13',
+          tags: [],
+          draft: true,
+          featured: false,
+          updatedAt: '2026-08-19',
+        },
+        body: 'Updated body',
+      },
+    });
+
+    expect(update.statusCode, update.body).toBe(200);
+    expect(update.json()).toMatchObject({ slug: 'BitDP', title: 'Updated Bit DP' });
+    await app.close();
+    database.close();
+  });
   it('imports plain Markdown by generating stored frontmatter', async () => {
     const { app, database } = await fixture();
     const upload = multipartMarkdown('Imported Note.md', '# Imported note\n\nImported summary.\n');

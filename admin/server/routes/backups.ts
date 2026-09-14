@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
+import { promisify } from 'node:util';
 import { mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
+import yauzl, { type Entry, type ZipFile as ReadZipFile } from 'yauzl';
 import type { FastifyInstance } from 'fastify';
 import type { AdminConfig } from '../config';
 import { backupApplyBodySchema, idParamsSchema, jsonSchema } from '../schemas';
@@ -21,6 +23,34 @@ export async function registerBackupRoutes(
   const candidates = new Map<string, BackupCandidate>();
   const backupRoot = resolve(config.jobsRoot, 'backups');
   const validationRoot = resolve(config.jobsRoot, 'restore-validation');
+  const openZip = promisify<string, yauzl.Options, ReadZipFile>(yauzl.open);
+  const readStoredFileCount = async (archivePath: string): Promise<number> => {
+    let zip: ReadZipFile | undefined;
+    try {
+      zip = await openZip(archivePath, { lazyEntries: true, decodeStrings: true, validateEntrySizes: true });
+      return await new Promise<number>((resolveCount, reject) => {
+        let settled = false;
+        const finish = (callback: () => void) => { if (settled) return; settled = true; callback(); };
+        zip!.on('error', (error) => finish(() => reject(error)));
+        zip!.on('entry', async (entry: Entry) => {
+          if (entry.fileName !== 'manifest.json') { zip!.readEntry(); return; }
+          try {
+            const stream = await new Promise<NodeJS.ReadableStream>((resolveStream, rejectStream) => {
+              zip!.openReadStream(entry, (error, value) => error || !value ? rejectStream(error ?? new Error('Missing ZIP stream.')) : resolveStream(value));
+            });
+            const chunks: Buffer[] = [];
+            for await (const chunk of stream) chunks.push(Buffer.from(chunk as Uint8Array));
+            const manifest = JSON.parse(Buffer.concat(chunks).toString('utf8')) as { files?: unknown };
+            finish(() => resolveCount(Array.isArray(manifest.files) ? manifest.files.length : 0));
+          } catch (error) { finish(() => reject(error)); }
+          finally { zip!.close(); }
+        });
+        zip!.on('end', () => finish(() => resolveCount(0)));
+        zip!.readEntry();
+      });
+    } catch { return 0; }
+    finally { zip?.close(); }
+  };
   const validateCandidateContent = async (candidate: BackupCandidate, id: string) => {
     const outputPath = resolve(validationRoot, `${id}.conf`);
     await mkdir(validationRoot, { recursive: true });
@@ -46,7 +76,7 @@ export async function registerBackupRoutes(
         name,
         createdAt: info.birthtime.toISOString(),
         byteSize: info.size,
-        fileCount: 0,
+        fileCount: await readStoredFileCount(path),
         downloadUrl: `/api/backups/${encodeURIComponent(basename(name, '.zip'))}/download`,
       };
     }));

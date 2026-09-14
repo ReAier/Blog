@@ -58,7 +58,7 @@ export function AppearanceControls() {
   return (
     <div className="appearance-controls" ref={container}>
       <button
-        className="appearance-trigger"
+        className="appearance-trigger icon-button"
         type="button"
         aria-label="打开外观设置"
         aria-expanded={open}

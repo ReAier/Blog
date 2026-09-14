@@ -162,11 +162,15 @@ describe('page-specific motion coverage', () => {
   });
 
   it('defines restrained hero, archive, menu, header, and common microinteractions', async () => {
-    const css = await read('src/styles/global.css');
+    const [globalCss, headerCss] = await Promise.all([
+      read('src/styles/global.css'),
+      read('src/styles/site-header.css'),
+    ]);
+    const css = `${globalCss}\n${headerCss}`;
     for (const token of [
       'archive-item::before',
-      '.site-nav[data-open="true"] a',
-      'body[data-header-compact="true"] .nav-shell',
+      ".site-nav[data-open='true'] a",
+      "body[data-header-compact='true'] .nav-shell",
       '.text-link:hover',
       '.tag:active',
       '.post-card:active',
