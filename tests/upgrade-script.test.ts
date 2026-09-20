@@ -29,17 +29,29 @@ describe('upgrade CLI arguments', () => {
   it('uses safe defaults', () => {
     expect(parseUpgradeArgs([])).toEqual({
       dryRun: false,
-      sshHost: 'aliyun-aiopt',
+      sshHost: 'aliyun',
     });
   });
 
   it.each([
-    [['--dry-run'], { dryRun: true, sshHost: 'aliyun-aiopt' }],
-    [['-DryRun'], { dryRun: true, sshHost: 'aliyun-aiopt' }],
+    [['--dry-run'], { dryRun: true, sshHost: 'aliyun' }],
+    [['-DryRun'], { dryRun: true, sshHost: 'aliyun' }],
     [['--ssh-host', 'example'], { dryRun: false, sshHost: 'example' }],
     [['-SshHost', 'example'], { dryRun: false, sshHost: 'example' }],
   ])('parses %j', (args, expected) => {
     expect(parseUpgradeArgs(args)).toEqual(expected);
+  });
+
+  it('uses the renamed default alias for both upload and remote activation', () => {
+    const plan = createUpgradePlan(parseUpgradeArgs([]), {
+      root: '/repo/blog',
+      release: '20260918T000000Z',
+      platform: 'linux',
+    });
+    expect(plan.steps.find((step) => step.label === 'Upload upgrade archive')?.args)
+      .toEqual([plan.archivePath, `aliyun:${plan.remoteArchive}`]);
+    expect(plan.steps.find((step) => step.label === 'Activate remote release')?.args[0])
+      .toBe('aliyun');
   });
 
   it('rejects unknown or missing options', () => {

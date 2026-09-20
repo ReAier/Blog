@@ -77,7 +77,7 @@ describe('motion policy', () => {
       ['RSS', `${origin}/rss.xml`],
       ['robots', `${origin}/robots.txt`],
       ['sitemaps', `${origin}/sitemap-index.xml`],
-      ['favicons', `${origin}/favicon.svg`],
+      ['favicons', `${origin}/favicon.png`],
       ['images', `${origin}/images/cover.webp`],
       ['fonts', `${origin}/fonts/site.woff2`],
       ['static assets', `${origin}/assets/app.js`],

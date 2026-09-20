@@ -42,6 +42,8 @@ npm run preview
 
 SSH 升级不会构建或切换公开站点。升级完成后，访客继续看到升级前的静态版本，直到管理员在后台手动发布。
 
+Mermaid 使用锁定 npm 包中的预构建 ESM 资源，构建时复制到公开站点和后台的 `/_mermaid/<版本>/` 目录。模块及其相对引用使用 `.js` 扩展名，兼容现有 Nginx MIME 配置；浏览器仅在页面包含图表时加载。服务器无需重新编译图表引擎，也无需提高 Node 默认堆上限。
+
 ### SSH 系统升级流程
 
 `scripts/upgrade.ts` 在 Windows、macOS 和 Linux 上执行以下流程：
@@ -71,7 +73,7 @@ SSH 升级不会构建或切换公开站点。升级完成后，访客继续看�
       └── 失败：回滚代码和迁移前内容
 ```
 
-本地需要 Node.js、npm，以及 PATH 中可用的 `tar`、`scp` 和 `ssh`，并配置 SSH 别名 `aliyun-aiopt`。Windows 会自动使用对应的 `.cmd` 或 `.exe` 命令。认证由本机 SSH 配置和密钥代理负责，不得写入仓库。
+本地需要 Node.js、npm，以及 PATH 中可用的 `tar`、`scp` 和 `ssh`，并配置 SSH 别名 `aliyun`。Windows 会自动使用对应的 `.cmd` 或 `.exe` 命令。认证由本机 SSH 配置和密钥代理负责，不得写入仓库。
 
 先执行演练：
 
@@ -239,7 +241,7 @@ HTML、RSS 和 sitemap 应允许及时刷新；带内容哈希的构建资源可
 单独验证：
 
 ```powershell
-ssh aliyun-aiopt
+ssh aliyun
 ```
 
 检查本机 SSH 配置、密钥权限、网络和远端用户，不要把凭据改写到仓库脚本中。

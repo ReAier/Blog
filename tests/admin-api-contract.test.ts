@@ -102,6 +102,27 @@ describe('admin API client contract', () => {
     await app.close();
     database.close();
   });
+  it('embeds the shared glass material in Mermaid previews without a relative material import', async () => {
+    const { app, database } = await fixture();
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/previews/instant',
+        headers: writeHeaders,
+        payload: { markdown: '```mermaid\ngraph TD; A-->B\n```' },
+      });
+      expect(response.statusCode, response.body).toBe(200);
+      const html = response.json().html as string;
+      expect(html).toContain('class="mermaid-figure"');
+      const material = await readFile('src/styles/glass-material.css', 'utf8');
+      expect(html).toContain(material.trim());
+      expect(html).not.toContain("@import './glass-material.css'");
+    } finally {
+      await app.close();
+      database.close();
+    }
+  });
+
   it('records editor history only for explicitly manual saves', async () => {
     const { app, database } = await fixture();
     const owner = await app.inject({ method: 'GET', url: '/api/posts/owner' });

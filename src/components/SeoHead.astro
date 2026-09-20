@@ -9,6 +9,9 @@ const imageUrl = image ? new URL(image, SITE.url) : undefined;
 <title>{pageTitle}</title>
 <meta name="description" content={description} />
 {robots && <meta name="robots" content={robots} />}
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" type="image/png" href="/favicon.png" sizes="64x64" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="canonical" href={canonical} />
 <meta property="og:type" content={article ? 'article' : 'website'} />
 <meta property="og:title" content={pageTitle} />

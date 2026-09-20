@@ -10,6 +10,7 @@ import { remarkManagedImages } from '../../../src/lib/remark-managed-images';
 import { remarkClipCards } from '../../../src/lib/remark-clip-card';
 import { remarkProblemCards } from '../../../src/lib/remark-problem-card';
 import { remarkReferenceCards } from '../../../src/lib/remark-reference-card';
+import { remarkMermaid } from '../../../src/lib/remark-mermaid';
 import type { AdminConfig } from '../config';
 import type { ContentRepository } from '../content/repository';
 import { jsonSchema } from '../schemas';
@@ -64,10 +65,13 @@ export async function registerPreviewRoutes(
   config: AdminConfig,
   repository: ContentRepository,
 ): Promise<void> {
-  const [siteCss, rawKatexCss] = await Promise.all([
+  const [rawSiteCss, glassCss, rawKatexCss] = await Promise.all([
     readFile(resolve(config.projectRoot, 'src/styles/global.css'), 'utf8'),
+    readFile(resolve(config.projectRoot, 'src/styles/glass-material.css'), 'utf8'),
     readFile(resolve(config.projectRoot, 'node_modules/katex/dist/katex.min.css'), 'utf8'),
   ]);
+  // srcdoc cannot resolve the site's relative material import; embed the shared tokens.
+  const siteCss = rawSiteCss.replace("@import './glass-material.css';", () => glassCss);
   const katexCss = rawKatexCss.replaceAll(
     'url(fonts/',
     'url(/preview-assets/katex/fonts/',
@@ -92,6 +96,7 @@ export async function registerPreviewRoutes(
       remarkCalloutCards,
       remarkReferenceCards,
       remarkProblemCards,
+      remarkMermaid,
     ],
     rehypePlugins: [rehypeKatex],
   });

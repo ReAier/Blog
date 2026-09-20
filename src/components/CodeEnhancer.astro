@@ -2,7 +2,7 @@
   const idleLabel = '复制代码';
 
   function enhanceCodeBlocks() {
-    document.querySelectorAll<HTMLElement>('.prose pre:not([data-code-enhanced])').forEach((block) => {
+    document.querySelectorAll<HTMLElement>('.prose pre:not([data-code-enhanced]):not([data-mermaid-source])').forEach((block) => {
       block.setAttribute('data-code-enhanced', '');
       const frame = document.createElement('div');
       frame.className = 'code-frame';

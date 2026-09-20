@@ -14,6 +14,7 @@ import { automaticPostSlug, todayInShanghai } from '../lib/content-defaults';
 import { createImageMarkdown, imageAssetMatchesPath } from '../lib/editor-actions';
 import { reconcileSavedDraft } from '../lib/save-reconciliation';
 import { applyPreviewTheme, observePreviewTheme } from '../lib/preview';
+import { renderMermaidPreview } from '../../../../src/lib/mermaid-renderer';
 import type {
   ClipSummary,
   ImageAsset,
@@ -88,6 +89,8 @@ export function PostEditorPage() {
   const [resourceBusy, setResourceBusy] = useState(false);
   const [clipInsertBusy, setClipInsertBusy] = useState(false);
   const [preview, setPreview] = useState('');
+  const [previewSource, setPreviewSource] = useState({ html: '', body: '' });
+  const [previewTheme, setPreviewTheme] = useState({ theme: 'dark', accent: 'rose', background: 'default' });
   const [clipQuery, setClipQuery] = useState('');
   const [imageQuery, setImageQuery] = useState('');
   const clipInsertOffsetRef = useRef<number | null>(null);
@@ -214,15 +217,10 @@ export function PostEditorPage() {
         : api.previewPost(slug);
       void request.then((result) => {
         if (active) {
-          const root = document.documentElement;
-          setPreview(applyPreviewTheme(result.html, {
-            theme: root.dataset.theme,
-            accent: root.dataset.accent,
-            background: root.dataset.background,
-          }));
+          setPreviewSource({ html: result.html, body: draft.body });
         }
       }).catch(() => {
-        if (active) setPreview('<p>即时预览生成失败，请检查 Markdown。</p>');
+        if (active) setPreviewSource({ html: '<p>即时预览生成失败，请检查 Markdown。</p>', body: draft.body });
       });
     }, 250);
     return () => {
@@ -231,9 +229,19 @@ export function PostEditorPage() {
     };
   }, [canRenderInstantPreview, draft.body, isNew, slug]);
 
-  useEffect(() => observePreviewTheme(document.documentElement, (theme) => {
-    setPreview((current) => applyPreviewTheme(current, theme));
-  }), []);
+  useEffect(() => observePreviewTheme(document.documentElement, setPreviewTheme), []);
+
+  useEffect(() => {
+    if (previewSource.body !== draft.body) return;
+    let active = true;
+    const html = applyPreviewTheme(previewSource.html, previewTheme);
+    void renderMermaidPreview(html, previewTheme.theme, () => active).then((rendered) => {
+      if (active) setPreview(rendered);
+    }).catch(() => {
+      if (active) setPreview(html);
+    });
+    return () => { active = false; };
+  }, [previewSource, previewTheme, draft.body]);
 
   const updateFrontmatter = <K extends keyof PostFrontmatter>(key: K, value: PostFrontmatter[K]) => {
     setDraft((current) => ({

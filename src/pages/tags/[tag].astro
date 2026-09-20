@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import PostCard from '../../components/PostCard.astro';
+import PostListItem from '../../components/PostListItem.astro';
 import { collectTags, sortPostsNewestFirst } from '../../lib/content';
 export async function getStaticPaths() {
   const posts = (await getCollection('blog')).filter((post) => !post.data.draft);
@@ -12,5 +12,9 @@ const posts = sortPostsNewestFirst((await getCollection('blog')).filter((post) =
 ---
 <BaseLayout title={`标签：${tag}`} description={`Aier's blogs 中标记为 ${tag} 的文章。`}>
   <header class="page-head container"><p class="eyebrow">Topic</p><h1 class="page-title">#{tag}</h1><p class="lead">共 {posts.length} 篇文章。</p></header>
-  <section class="section container"><div class="post-grid">{posts.map((post) => <PostCard post={post} />)}</div></section>
+  <section class="section container">
+    <ol class="post-list">
+      {posts.map((post) => <PostListItem post={post} />)}
+    </ol>
+  </section>
 </BaseLayout>

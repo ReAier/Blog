@@ -1097,3 +1097,26 @@ body,
   [data-hero-title] em::after { display: none; }
   .archive-list::before { transform: scaleY(1); }
 }
+
+/* Mermaid diagrams retain readable source until rendering succeeds. */
+.prose .mermaid-figure {
+  margin: 1.8em 0;
+  min-width: 0;
+  padding: clamp(12px, 2vw, 24px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--article-glass-surface);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .06), var(--article-glass-shadow);
+  -webkit-backdrop-filter: blur(var(--article-glass-blur)) saturate(var(--article-glass-saturation));
+  backdrop-filter: blur(var(--article-glass-blur)) saturate(var(--article-glass-saturation));
+}
+.mermaid-output { overflow-x: auto; max-width: 100%; text-align: center; }
+/* Override Mermaid's canvas background only; preserve node and label colors. */
+.mermaid-output > svg { display: block; margin: 0 auto; height: auto; background: transparent !important; }
+.mermaid-figure [hidden] { display: none !important; }
+.prose .mermaid-error { color: var(--muted); font-size: .85em; margin-bottom: 0; }
+.prose .mermaid-figure pre { margin: 0; text-align: left; }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .prose .mermaid-figure { background: var(--article-glass-surface-fallback); }
+}

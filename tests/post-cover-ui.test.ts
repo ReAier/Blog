@@ -34,7 +34,7 @@ describe('post cover rendering contract', () => {
     expect(home).toContain('<PostListItem post={post} />');
     expect(posts).toContain("import PostListItem from '../../components/PostListItem.astro'");
     expect(posts).toContain('<PostListItem post={post} />');
-    expect(tag).toContain('<PostCard post={post} />');
+    expect(tag).toContain('<PostListItem post={post} />');
   });
 
   it('keeps detail covers metadata-only and archive entries text-only', async () => {

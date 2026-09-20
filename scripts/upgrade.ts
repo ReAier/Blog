@@ -82,7 +82,7 @@ export const archiveExclusions = [
 export function parseUpgradeArgs(args: readonly string[]): UpgradeOptions {
   const options: UpgradeOptions = {
     dryRun: false,
-    sshHost: 'aliyun-aiopt',
+    sshHost: 'aliyun',
   };
 
   for (let index = 0; index < args.length; index += 1) {
